@@ -41,10 +41,18 @@ public sealed class EtwNetworkMonitor : IDisposable
 
             // 顺序关键：必须在首次访问 session.Source 之前启用提供程序，
             // 否则 EnableKernelProvider 抛出“must be enabled first and only once”
-            session.EnableKernelProvider(KernelTraceEventParser.Keywords.NetworkTCPIP);
+            session.EnableKernelProvider(KernelTraceEventParser.Keywords.NetworkTCPIP
+                | KernelTraceEventParser.Keywords.Process);
             session.EnableProvider("Microsoft-Windows-DNS-Client");
 
             var k = session.Source.Kernel;
+
+            // 进程生命周期：Start/DCStart(启动 rundown，覆盖会话开始时已运行的进程)/Stop
+            // 3.1.30 中三类事件统一为 ProcessTraceData：ProcessID/ParentID/CommandLine/ImageFileName
+            k.ProcessStart   += e => EmitProc(true,  e.TimeStamp, e.ProcessID, e.ParentID, e.ImageFileName, e.CommandLine);
+            k.ProcessDCStart += e => EmitProc(true,  e.TimeStamp, e.ProcessID, e.ParentID, e.ImageFileName, e.CommandLine);
+            k.ProcessStop    += e => EmitProc(false, e.TimeStamp, e.ProcessID, 0, e.ImageFileName, null);
+
             k.TcpIpSend          += e => Emit(e.TimeStamp, e.ProcessID, NetProto.Tcp, true,  e.daddr, e.dport, e.size);
             k.TcpIpSendIPV6      += e => Emit(e.TimeStamp, e.ProcessID, NetProto.Tcp, true,  e.daddr, e.dport, e.size);
             k.TcpIpRecv          += e => Emit(e.TimeStamp, e.ProcessID, NetProto.Tcp, false, e.saddr, e.sport, e.size);
@@ -94,6 +102,19 @@ public sealed class EtwNetworkMonitor : IDisposable
             try { _session?.Stop(); } catch { }
             _session = null;
         }
+    }
+
+    /// 内核进程事件（启动/退出，含会话开始时的 rundown）：补父进程与命令行
+    public event Action<bool, int, int?, string?, string?, DateTime>? OnProcessEvent;
+
+    private void EmitProc(bool isStart, DateTime t, int pid, int parentPid, string? image, string? cmd)
+    {
+        try
+        {
+            OnProcessEvent?.Invoke(isStart, pid, parentPid <= 0 ? null : parentPid,
+                string.IsNullOrEmpty(image) ? null : image, cmd, t.ToUniversalTime());
+        }
+        catch { }
     }
 
     private void Emit(DateTime t, int pid, NetProto proto, bool send, IPAddress? remote, int remotePort, int bytes)

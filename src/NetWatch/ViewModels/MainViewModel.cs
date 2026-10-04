@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -27,6 +28,11 @@ public sealed class MainViewModel : VmBase, IDisposable
     public NetConfigService Config { get; } = new();
     public FirewallService Firewall { get; } = new();
     private DnsCheckService DnsCheck { get; } = new();
+
+    /// P1 统一事件库与实体仓库（事实层；P2 证据链、P3 持久化的数据源）
+    public EventStore Store { get; } = new();
+    public EntityStore Entities { get; } = new();
+    private readonly ConcurrentQueue<(bool Start, int Pid, int? Parent, string? Image, string? Cmd, DateTime T)> _procEvents = new();
 
     // ---------- 集合 ----------
     public ObservableCollection<ProcessRowVM> Rows { get; } = new();
@@ -60,6 +66,7 @@ public sealed class MainViewModel : VmBase, IDisposable
     {
         Monitor.OnNetEvent += e => { Dns.InspectNetEvent(e); Agg.Enqueue(e); };
         Monitor.OnDnsEvent += d => Dns.OnDns(d);
+        Monitor.OnProcessEvent += (start, pid, parent, image, cmd, t) => _procEvents.Enqueue((start, pid, parent, image, cmd, t));
 
         _rowsView = (ListCollectionView)CollectionViewSource.GetDefaultView(Rows);
         _rowsView.Filter = o => o is ProcessRowVM r && MatchSearch(r) && (!OnlyFlagged || r.RiskByte >= 2);
@@ -167,6 +174,10 @@ public sealed class MainViewModel : VmBase, IDisposable
     public string DetailSignature { get; private set; } = "";
     public SolidColorBrush DetailSignatureBrush { get; private set; } = UiBrushes.Dim;
     public ImageSource? DetailIcon { get; private set; }
+    public string DetailParent { get; private set; } = "";
+    public string DetailCmdLine { get; private set; } = "";
+    public string DetailServices { get; private set; } = "";
+    public string DetailIdentity { get; private set; } = "";
 
     // ================= DNS 页 =================
 
@@ -201,15 +212,55 @@ public sealed class MainViewModel : VmBase, IDisposable
             var logs = new List<NetEvent>();
             if (Paused) Agg.Drain(); else Agg.Tick(!HideLoopback, logs);
             foreach (var le in logs)
-                AddEvent(EventRowVM.FromNet(le, Tracker.Get(le.Pid).Name, Dns));
+            {
+                var name = Tracker.Get(le.Pid).Name;
+                AddEvent(EventRowVM.FromNet(le, name, Dns));
+                Store.Add(new EventRecord
+                {
+                    TimeUtc = le.TimeUtc,
+                    Kind = le.Kind switch
+                    {
+                        EventKind.NewConn => EventKindEx.NewConn,
+                        EventKind.Closed => EventKindEx.Closed,
+                        _ => EventKindEx.LargeTransfer,
+                    },
+                    Pid = le.Pid,
+                    IdentityKey = Entities.GetProcess(le.Pid)?.IdentityKey,
+                    RemoteIp = le.RemoteIp,
+                    RemotePort = le.RemotePort,
+                    Proto = le.Proto,
+                    Bytes = le.Kind == EventKind.Traffic ? le.Bytes : 0,
+                });
+            }
 
             foreach (var it in Dns.DrainStream())
             {
                 DnsStream.Add(DnsRowVM.From(it, Tracker.Get(it.Pid).Name));
                 while (DnsStream.Count > 400) DnsStream.RemoveAt(0);
+                Store.Add(new EventRecord
+                {
+                    TimeUtc = it.TimeUtc, Kind = EventKindEx.DnsResolve, Pid = it.Pid,
+                    IdentityKey = Entities.GetProcess(it.Pid)?.IdentityKey, Domain = it.Domain, Text = it.AlertText,
+                });
             }
             foreach (var a in Dns.DrainAlerts())
+            {
                 AddEvent(EventRowVM.FromAlert(a.Time, a.Level, a.Text));
+                Store.Add(new EventRecord { TimeUtc = a.Time, Kind = EventKindEx.Alert, Text = a.Text, Level = a.Level });
+            }
+
+            // 进程生命周期事件（内核 rundown/启动/退出）→ 实体库 + 事件库
+            while (_procEvents.TryDequeue(out var pe))
+            {
+                Entities.ApplyKernelProcessEvent(pe.Start, pe.Pid, pe.Parent, pe.Image, pe.Cmd, pe.T);
+                Store.Add(new EventRecord
+                {
+                    TimeUtc = pe.T,
+                    Kind = pe.Start ? EventKindEx.ProcessStart : EventKindEx.ProcessStop,
+                    Pid = pe.Pid,
+                    Text = pe.Start ? $"{pe.Image ?? ""} {pe.Cmd ?? ""}".Trim() : pe.Image,
+                });
+            }
 
             RebuildConnIndex();
             UpdateRows();
@@ -220,6 +271,8 @@ public sealed class MainViewModel : VmBase, IDisposable
             UpdateTop();
             UpdateStatus();
             RefreshRecentNames();
+
+            if (_tickCount % 30 == 1) _ = Task.Run(() => Entities.RefreshServices());
 
             if (_tickCount % 30 == 0)
                 Log.Info($"tick: rows={Rows.Count}, conns={_latestConns.Count}, events={Agg.EventCount}, etw={Monitor.Running}, paused={Paused}");
@@ -297,6 +350,7 @@ public sealed class MainViewModel : VmBase, IDisposable
 
             SuspicionAnalyzer.Evaluate(entry, stats, _session.Elapsed);
             entry.FirewallBlocked = entry.Path != null && _blockedPaths.Contains(entry.Path);
+            Entities.ApplyProcessEntry(entry);   // 实体库登记（身份/实例）
 
             if (!_rowsByPid.TryGetValue(pid, out var row))
             {
@@ -376,6 +430,24 @@ public sealed class MainViewModel : VmBase, IDisposable
                     (entry.StartTimeUtc != null ? $" · 启动于 {entry.StartTimeUtc.Value.ToLocalTime():MM-dd HH:mm:ss}" : "");
         DetailPath = entry.Path ?? "（无法读取路径：受保护进程或权限不足）";
         DetailIcon = entry.Icon;
+
+        // P1 关联信息：父进程 / 命令行 / 所属服务 / 软件身份
+        var inst = Entities.GetProcess(entry.Pid);
+        DetailParent = inst?.ParentPid is { } pp
+            ? $"PID {pp}" + (Entities.GetProcess(pp)?.Name is { } pn ? $" · {pn}" : "")
+            : "未知（内核 rundown 未覆盖该进程时不可得）";
+        DetailCmdLine = inst?.CommandLine ?? "（未采集到）";
+        var svcs = Entities.ServicesOf(entry.Pid);
+        DetailServices = svcs.Count == 0
+            ? "（非服务宿主，或服务枚举尚未完成）"
+            : string.Join("、", svcs.Select(s => s.DisplayName == s.Name ? s.Name : $"{s.Name} ({s.DisplayName})"));
+        var id = Entities.GetIdentity(inst?.IdentityKey);
+        DetailIdentity = id == null
+            ? "未知"
+            : $"{id.Kind switch { IdentityKind.Signed => "签名身份", IdentityKind.PathOnly => "路径身份", IdentityKind.SystemReserved => "系统保留", IdentityKind.Packaged => "打包应用", _ => "未知" }} · {id.DisplayName}" +
+              (id.Kind == IdentityKind.Signed && id.CertSubject != null ? $" · {id.CertSubject}" : "") +
+              (id.Kind != IdentityKind.SystemReserved ? $" · 首见于 {id.FirstSeenUtc.ToLocalTime():MM-dd HH:mm}" : "");
+
         (DetailSignature, DetailSignatureBrush) = entry.Signature switch
         {
             SignatureState.Valid => (entry.SignatureSubject == null ? "签名有效" : $"签名有效 · {entry.SignatureSubject}", UiBrushes.Green),
@@ -399,7 +471,8 @@ public sealed class MainViewModel : VmBase, IDisposable
             foreach (var c in conns) SelectedConns.Add(ConnRowVM.From(c, Dns));
 
         RaiseAll(nameof(DetailName), nameof(DetailCompany), nameof(DetailPid), nameof(DetailPath),
-            nameof(DetailSignature), nameof(DetailSignatureBrush), nameof(DetailIcon));
+            nameof(DetailSignature), nameof(DetailSignatureBrush), nameof(DetailIcon),
+            nameof(DetailParent), nameof(DetailCmdLine), nameof(DetailServices), nameof(DetailIdentity));
     }
 
     // ================= 目的地 / 端口 / 配置 =================

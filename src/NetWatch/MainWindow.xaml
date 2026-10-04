@@ -216,6 +216,19 @@
                                         <TextBlock Text="程序路径" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailPath}" TextWrapping="Wrap"
                                                    Foreground="{StaticResource DimBrush}"/>
+                                        <TextBlock Text="父进程" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{Binding DetailParent}" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource DimBrush}"/>
+                                        <TextBlock Text="命令行" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{Binding DetailCmdLine}" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource DimBrush}"
+                                                   ToolTip="{Binding DetailCmdLine}"/>
+                                        <TextBlock Text="所属服务（svchost 归因）" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{Binding DetailServices}" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource DimBrush}"/>
+                                        <TextBlock Text="软件身份（跨会话基线主体）" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{Binding DetailIdentity}" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource DimBrush}"/>
                                         <TextBlock Text="数字签名" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailSignature}" Foreground="{Binding DetailSignatureBrush}"/>
                                         <TextBlock Text="风险提示（提示 ≠ 确诊病毒）" Style="{StaticResource SectionHeader}"/>

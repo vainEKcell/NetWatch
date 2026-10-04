@@ -54,6 +54,7 @@ public sealed class ProcessEntry
     public string? Path { get; set; }
     public string? Company { get; set; }
     public string? Description { get; set; }
+    public string? ProductName { get; set; }
     public DateTime? StartTimeUtc { get; set; }
     public bool Exited { get; set; }
     public SignatureState Signature { get; set; } = SignatureState.Unknown;

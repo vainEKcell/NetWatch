@@ -78,6 +78,7 @@ public sealed class ProcessTracker : IDisposable
                     var fvi = FileVersionInfo.GetVersionInfo(entry.Path!);
                     entry.Company = Blank(fvi.CompanyName);
                     entry.Description = Blank(fvi.FileDescription);
+                    entry.ProductName = Blank(fvi.ProductName);
                 }
                 catch { }
                 entry.Icon = LoadIcon(entry.Path!);
