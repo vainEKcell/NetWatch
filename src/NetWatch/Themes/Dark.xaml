@@ -202,6 +202,17 @@
         <Setter Property="ColumnHeaderHeight" Value="32"/>
     </Style>
 
+    <!-- 列宽拖拽把手 -->
+    <Style x:Key="HeaderGripper" TargetType="Thumb">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border Background="Transparent"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style TargetType="DataGridColumnHeader">
         <Setter Property="Background" Value="{StaticResource Panel2Brush}"/>
         <Setter Property="Foreground" Value="{StaticResource DimBrush}"/>
@@ -216,8 +227,14 @@
                     <Border Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
-                        <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center"
-                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                        <Grid>
+                            <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                            <Thumb x:Name="PART_LeftHeaderGripper" Style="{StaticResource HeaderGripper}"
+                                   HorizontalAlignment="Left" Width="6" Cursor="SizeWE"/>
+                            <Thumb x:Name="PART_RightHeaderGripper" Style="{StaticResource HeaderGripper}"
+                                   HorizontalAlignment="Right" Width="6" Cursor="SizeWE"/>
+                        </Grid>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>

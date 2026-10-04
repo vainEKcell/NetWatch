@@ -52,4 +52,28 @@ public static class Util
 
     public static string ScopeText(bool loopback, bool lan)
         => loopback ? "回环" : lan ? "局域网" : "公网";
+
+    /// 拆分 "1.2.3.4:443" / "[fe80::1]:1900" 端点表示，IPv6 用方括号约定
+    public static (string Addr, int Port) SplitEndpoint(string endpoint)
+    {
+        if (!string.IsNullOrEmpty(endpoint) && endpoint.StartsWith("["))
+        {
+            int close = endpoint.IndexOf(']');
+            if (close > 0)
+            {
+                var addr = endpoint[1..close];
+                int port = 0;
+                if (close + 2 < endpoint.Length && endpoint[close + 1] == ':')
+                    int.TryParse(endpoint[(close + 2)..], out port);
+                return (addr, port);
+            }
+        }
+        int i = endpoint?.LastIndexOf(':') ?? -1;
+        if (i > 0 && int.TryParse(endpoint![(i + 1)..], out var p)) return (endpoint[..i], p);
+        return (endpoint ?? "", 0);
+    }
+
+    /// 地址+端口 → 显示串；地址含冒号（IPv6）时用方括号，避免歧义
+    public static string FormatEndpoint(string addr, int port)
+        => string.IsNullOrEmpty(addr) ? "" : addr.Contains(':') ? $"[{addr}]:{port}" : $"{addr}:{port}";
 }

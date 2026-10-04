@@ -496,8 +496,8 @@ public sealed class MainViewModel : VmBase, IDisposable
         if (flagged > 0 || alerts > 0)
         {
             var parts = new List<string>();
-            if (flagged > 0) parts.Add($"{flagged} 个进程行为可疑（总览表已标色）");
-            if (alerts > 0) parts.Add($"{alerts} 条 DNS/配置告警（见 DNS 安全页与事件流）");
+            if (flagged > 0) parts.Add($"{flagged} 个进程存在值得关注的行为（详见总览标色与详情面板，提示 ≠ 确诊）");
+            if (alerts > 0) parts.Add($"{alerts} 条 DNS/配置提示（见 DNS 安全页与事件流）");
             BannerText = "⚠ " + string.Join("；", parts);
             BannerVisible = true;
         }

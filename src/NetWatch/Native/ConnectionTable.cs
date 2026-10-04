@@ -52,10 +52,10 @@ public static class ConnectionTable
                     int pid = Marshal.ReadInt32(buf, off + 20);
 
                     var lip = Ip4(la); var rip = Ip4(ra);
-                    string remote = state == 2 /*LISTEN*/ ? "*" : $"{rip}:{Swap(rp)}";
+                    string remote = state == 2 /*LISTEN*/ ? "*" : Util.FormatEndpoint(rip.ToString(), Swap(rp));
                     bool loop = IsLoopback(lip) || IsLoopback(rip);
                     bool lan = !loop && !rip.Equals(IPAddress.Any) && Util.IsLanIp(rip);
-                    list.Add(new ConnectionInfo(NetProto.Tcp, $"{lip}:{Swap(lp)}", remote,
+                    list.Add(new ConnectionInfo(NetProto.Tcp, Util.FormatEndpoint(lip.ToString(), Swap(lp)), remote,
                         TcpState(state), pid, loop, lan));
                 }
             }
@@ -71,10 +71,10 @@ public static class ConnectionTable
                     uint state = (uint)Marshal.ReadInt32(buf, off + 48);
                     int pid = Marshal.ReadInt32(buf, off + 52);
 
-                    string remote = state == 2 ? "*" : $"{ra}:{Swap(rp)}";
+                    string remote = state == 2 ? "*" : Util.FormatEndpoint(ra.ToString(), Swap(rp));
                     bool loop = IsLoopback(la) || IsLoopback(ra);
                     bool lan = !loop && Util.IsLanIp(ra);
-                    list.Add(new ConnectionInfo(NetProto.Tcp, $"{la}:{Swap(lp)}", remote,
+                    list.Add(new ConnectionInfo(NetProto.Tcp, Util.FormatEndpoint(la.ToString(), Swap(lp)), remote,
                         TcpState(state), pid, loop, lan));
                 }
             }
@@ -104,7 +104,7 @@ public static class ConnectionTable
                     uint lp = (uint)Marshal.ReadInt32(buf, off + 4);
                     int pid = Marshal.ReadInt32(buf, off + 8);
                     var lip = Ip4(la);
-                    list.Add(new ConnectionInfo(NetProto.Udp, $"{lip}:{Swap(lp)}", "-",
+                    list.Add(new ConnectionInfo(NetProto.Udp, Util.FormatEndpoint(lip.ToString(), Swap(lp)), "-",
                         "无连接", pid, IsLoopback(lip), false));
                 }
             }
@@ -116,7 +116,7 @@ public static class ConnectionTable
                     var la = Ip6(buf, off);
                     uint lp = (uint)Marshal.ReadInt32(buf, off + 20);
                     int pid = Marshal.ReadInt32(buf, off + 24);
-                    list.Add(new ConnectionInfo(NetProto.Udp, $"{la}:{Swap(lp)}", "-",
+                    list.Add(new ConnectionInfo(NetProto.Udp, Util.FormatEndpoint(la.ToString(), Swap(lp)), "-",
                         "无连接", pid, IsLoopback(la), false));
                 }
             }

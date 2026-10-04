@@ -121,8 +121,7 @@ public sealed class EventRowVM : VmBase
             RawBytes = e.Kind == EventKind.Traffic ? e.Bytes : 0,
         };
         string domain = e.RemoteIp != null ? dns.LookupDomain(e.RemoteIp) ?? "" : "";
-        string remote = e.RemoteIp == null ? "" :
-            e.RemotePort > 0 ? $"{e.RemoteIp}:{e.RemotePort}" : e.RemoteIp;
+        string remote = e.RemoteIp == null ? "" : Util.FormatEndpoint(e.RemoteIp, e.RemotePort);
         if (domain.Length > 0) remote += $" ({domain})";
         vm.Detail = remote;
         switch (e.Kind)
@@ -182,7 +181,8 @@ public sealed class ConnRowVM : VmBase
 
     public static ConnRowVM From(ConnectionInfo c, DnsService dns)
     {
-        var domain = dns.LookupDomain(c.Remote.Split(':')[0]);
+        var (raddr, _) = Util.SplitEndpoint(c.Remote);
+        var domain = dns.LookupDomain(raddr);
         var vm = new ConnRowVM
         {
             Remote = domain == null ? c.Remote : $"{c.Remote} ({domain})",
@@ -269,8 +269,8 @@ public sealed class PortRowVM : VmBase
     public void Update(ConnectionInfo c, string procName)
     {
         ProtoText = c.Proto == NetProto.Tcp ? "TCP" : "UDP";
-        var addr = c.Local.Split(':')[0];
-        Port = int.TryParse(c.Local.Split(':').LastOrDefault(), out var p) ? p : 0;
+        var (addr, port) = Util.SplitEndpoint(c.Local);
+        Port = port;
         Bind = c.Local;
         BindText = addr is "0.0.0.0" or "::" ? "⚠ 对局域网开放" : addr is "127.0.0.1" or "::1" ? "仅本机" : "特定地址";
         Pid = c.Pid;
