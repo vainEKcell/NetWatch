@@ -30,54 +30,43 @@ function Shot([string]$name) {
 }
 
 $root = [System.Windows.Automation.AutomationElement]::RootElement
-$pid2 = (Get-Process NetWatch | Select-Object -First 1).Id
-$cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $pid2)
+$nid = (Get-Process NetWatch | Select-Object -First 1).Id
+$cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $nid)
 $win = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
-if (-not $win) { throw "UIA: NetWatch window not found" }
+if (-not $win) { throw "UIA: NetWatch window not found (pid=$nid)" }
 
 function FindByName([string]$name) {
     $c = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $name)
     return $win.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $c)
 }
 
-# 1) 取消「仅看可疑」过滤
+# 取消「仅看可疑」
 $cb = FindByName "仅看可疑"
 if ($cb) {
     $tp = $cb.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
     if ($tp.Current.ToggleState -eq [System.Windows.Automation.ToggleState]::On) { $tp.Toggle() }
-    Start-Sleep -Milliseconds 800
-    Write-Output "flag-filter: off"
-} else { Write-Output "flag-filter: checkbox not found" }
+    Start-Sleep -Milliseconds 600
+}
 
-# 2) 切到总览
+# 切到总览
 $tab = FindByName "总览"
 ($tab.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)).Select()
 Start-Sleep -Milliseconds 1500
 
-# 3) 选中进程表第一行
+# 在进程表里找 svchost 行优先选中，否则选第一行
 $dg = $win.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
     (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, "DataGrid")))
 if ($dg) {
     $rowCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::DataItem)
-    $row = $dg.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $rowCond)
-    if ($row) {
-        ($row.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)).Select()
-        Write-Output ("selected row: " + $row.Current.Name)
-        Start-Sleep -Milliseconds 2000
-    } else { Write-Output "no rows in grid" }
-} else { Write-Output "no datagrid" }
-
-Shot "tab-overview2.png"
-
-# 4) DNS 页验证 IP 归一化
-$tab = FindByName "DNS 安全"
-($tab.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)).Select()
-Start-Sleep -Milliseconds 2500
-Shot "tab-dns2.png"
-
-# 5) 目的地页验证域名标注
-$tab = FindByName "目的地排行"
-($tab.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)).Select()
-Start-Sleep -Milliseconds 1500
-Shot "tab-dest2.png"
+    $rows = $dg.FindAll([System.Windows.Automation.TreeScope]::Descendants, $rowCond)
+    $target = $null
+    foreach ($r in $rows) { if ($r.Current.Name -match 'svchost') { $target = $r; break } }
+    if (-not $target -and $rows.Count -gt 0) { $target = $rows[0] }
+    if ($target) {
+        ($target.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)).Select()
+        Write-Output ("selected: " + $target.Current.Name)
+        Start-Sleep -Milliseconds 2500
+    } else { Write-Output "no rows" }
+}
+Shot "p1-svchost.png"
 Write-Output "done"

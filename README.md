@@ -75,10 +75,10 @@
 
 ## 技术架构（简）
 
-- **采集**：ETW 实时会话（内核 `NetworkTCPIP` + `Microsoft-Windows-DNS-Client` 双提供程序）；iphlpapi 连接表 2 秒轮询；NetworkInterface/注册表/hosts 10 秒轮询
-- **解析**：PID→进程信息后台单线程队列（路径/图标/厂商/启动时间），Authenticode 签名验证（wintrust）按路径缓存
-- **分析**：1 秒 EMA 速率聚合、按远端聚合、启发式风险规则、DNS 劫持启发式
-- **处置**：Windows 防火墙 COM 规则（`NetWatch Block` 前缀，出+入站）
+- **采集**：ETW 实时会话（内核 `NetworkTCPIP` + `Process` + `Microsoft-Windows-DNS-Client` 提供程序；进程事件提供父进程与命令行，含启动 rundown）；iphlpapi 连接表 2 秒轮询；NetworkInterface/注册表/hosts 10 秒轮询；advapi32 服务枚举（PID→服务，svchost 归因）
+- **事实层**：EventStore（统一事件环形库）+ EntityStore（软件身份 / 进程实例 / 目的地 / 服务四类实体及关系）。软件身份取法：打包应用用 PFN、有签名用「证书主体+产品名」、未签名用路径哈希——该身份是跨会话行为基线（P3）的主键
+- **分析层**：1 秒 EMA 速率聚合、按远端聚合、启发式风险规则（证据陈述式措辞，明确标注误报可能）、DNS 劫持启发式
+- **处置层**：Windows 防火墙 COM 规则（`NetWatch Block` 前缀，出+入站），仅用户手动触发
 - **界面**：.NET 10 WPF 深色主题，ETW 专用线程消费、UI 线程 1 秒快照刷新
 
 ## 路线图（下一阶段：证据驱动的网络行为分析工具）
