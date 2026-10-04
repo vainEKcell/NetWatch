@@ -63,7 +63,7 @@ public sealed class ProcessRowVM : VmBase
     public string RiskText { get; private set; } = "";
     public bool Blocked { get; private set; }
 
-    public void Update(ProcessEntry e, PidStats? s, int conns)
+    public void Update(ProcessEntry e, PidStats? s, int conns, Verdict verdict)
     {
         Pid = e.Pid;
         Name = e.Exited ? e.Name + "（已退出）" : e.Name;
@@ -79,10 +79,23 @@ public sealed class ProcessRowVM : VmBase
         UpTotalText = Util.FormatBytes(UpTotalBytes);
         DownTotalText = Util.FormatBytes(DownTotalBytes);
         ConnCount = conns;
-        Risk = e.Risk;
-        RiskByte = (byte)e.Risk;
-        RiskBrush = UiBrushes.Risk(e.Risk);
-        RiskText = e.RiskReasons.Count == 0 ? "未发现可疑点" : string.Join("\n", e.RiskReasons);
+        Risk = verdict.Status switch
+        {
+            VerdictStatus.HighRisk => RiskLevel.High,
+            VerdictStatus.Attention => RiskLevel.Medium,
+            _ => RiskLevel.None,
+        };
+        RiskByte = verdict.RiskByte;
+        RiskBrush = verdict.Status switch
+        {
+            VerdictStatus.HighRisk => UiBrushes.Red,
+            VerdictStatus.Attention => UiBrushes.Amber,
+            VerdictStatus.Unknown => UiBrushes.Dim,
+            _ => UiBrushes.Faint,
+        };
+        RiskText = verdict.Summary + (verdict.Evidence.Count == 0
+            ? ""
+            : "\n" + string.Join("\n", verdict.Evidence.Select(x => $"• {x.Statement}" + (x.Caveat != null ? $"（误报可能：{x.Caveat}）" : ""))));
         Blocked = e.FirewallBlocked;
         RaiseAll(nameof(Pid), nameof(Name), nameof(Company), nameof(Path), nameof(IconSource),
             nameof(UpSpeedText), nameof(DownSpeedText), nameof(UpTotalText), nameof(DownTotalText),

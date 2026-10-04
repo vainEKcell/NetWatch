@@ -54,9 +54,11 @@ public sealed class MainViewModel : VmBase, IDisposable
     private readonly Dictionary<string, PortRowVM> _portMap = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, AdapterRowVM> _adapterMap = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<int, List<ConnectionInfo>> _connsByPid = new();
+    private readonly Dictionary<int, Verdict> _verdictsByPid = new();
     private volatile List<ConnectionInfo> _latestConns = new();
     private HashSet<string> _blockedPaths = new(StringComparer.OrdinalIgnoreCase);
     private ListCollectionView? _rowsView;
+    private ListCollectionView? _eventsView;
     private string? _sortKey = "Total";
     private bool _sortDesc = true;
 
@@ -70,6 +72,9 @@ public sealed class MainViewModel : VmBase, IDisposable
 
         _rowsView = (ListCollectionView)CollectionViewSource.GetDefaultView(Rows);
         _rowsView.Filter = o => o is ProcessRowVM r && MatchSearch(r) && (!OnlyFlagged || r.RiskByte >= 2);
+
+        _eventsView = (ListCollectionView)CollectionViewSource.GetDefaultView(Events);
+        _eventsView.Filter = o => o is EventRowVM ev && (EventsPidFilter == null || ev.Pid == EventsPidFilter.Value);
 
         _ = Task.Run(async () =>
         {
@@ -95,6 +100,9 @@ public sealed class MainViewModel : VmBase, IDisposable
         ClearEventsCommand = new RelayCommand(Events.Clear);
         DohRunCommand = new RelayCommand(() => _ = RunDnsCheck());
         OpenHostsCommand = new RelayCommand(OpenHostsFile);
+        ShowRelatedEventsCommand = new RelayCommand(ShowRelatedEventsForSelection);
+        ClearEventsFilterCommand = new RelayCommand(ClearEventsFilter);
+        QueryFileIntelCommand = new RelayCommand(() => _ = QuerySelectedFileIntelAsync());
 
         Monitor.Start();
         RefreshBlocked();
@@ -115,6 +123,12 @@ public sealed class MainViewModel : VmBase, IDisposable
     public RelayCommand ClearEventsCommand { get; }
     public RelayCommand DohRunCommand { get; }
     public RelayCommand OpenHostsCommand { get; }
+    public RelayCommand ShowRelatedEventsCommand { get; }
+    public RelayCommand ClearEventsFilterCommand { get; }
+    public RelayCommand QueryFileIntelCommand { get; }
+
+    /// P2 调查联动：UI 订阅后切到事件流页
+    public event Action? NavigateToEventsRequested;
 
     public void TogglePause()
     {
@@ -178,6 +192,73 @@ public sealed class MainViewModel : VmBase, IDisposable
     public string DetailCmdLine { get; private set; } = "";
     public string DetailServices { get; private set; } = "";
     public string DetailIdentity { get; private set; } = "";
+    public string DetailVerdict { get; private set; } = "";
+    public SolidColorBrush DetailVerdictBrush { get; private set; } = UiBrushes.Dim;
+    public ObservableCollection<string> DetailEvidence { get; } = new();
+
+    // ---------- 事件流按进程过滤（调查联动） ----------
+    private int? _eventsPidFilter;
+    public int? EventsPidFilter
+    {
+        get => _eventsPidFilter;
+        set
+        {
+            _eventsPidFilter = value;
+            Raise(nameof(EventsPidFilter));
+            Raise(nameof(EventsFilterText));
+            Raise(nameof(EventsFilterVisible));
+            _eventsView?.Refresh();
+        }
+    }
+    public string EventsFilterText => EventsPidFilter == null ? "" : $"只看 PID {EventsPidFilter} 的相关事件";
+    public bool EventsFilterVisible => EventsPidFilter != null;
+
+    public void ShowRelatedEventsForSelection()
+    {
+        if (_selected == null) return;
+        EventsPidFilter = _selected.Pid;
+        NavigateToEventsRequested?.Invoke();
+    }
+
+    public void ClearEventsFilter() => EventsPidFilter = null;
+
+    public void FilterEventsByPid(int pid)
+    {
+        EventsPidFilter = pid;
+        NavigateToEventsRequested?.Invoke();
+    }
+
+    /// 文件哈希缓存（按需计算）：用于“浏览器查询此文件公开情报”
+    private static readonly ConcurrentDictionary<string, string?> _fileHashCache = new(StringComparer.OrdinalIgnoreCase);
+
+    public async Task QuerySelectedFileIntelAsync()
+    {
+        var row = _selected;
+        if (row == null) return;
+        var path = Tracker.Get(row.Pid).Path;
+        if (string.IsNullOrEmpty(path))
+        {
+            MessageBox.Show("无法读取该程序的路径。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        try
+        {
+            var hash = await Task.Run(() => _fileHashCache.GetOrAdd(path!, p =>
+            {
+                using var fs = File.OpenRead(p);
+                return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(fs)).ToLowerInvariant();
+            }));
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"https://www.virustotal.com/gui/file/{hash}",
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"查询失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
 
     // ================= DNS 页 =================
 
@@ -348,8 +429,9 @@ public sealed class MainViewModel : VmBase, IDisposable
                 }
             }
 
-            SuspicionAnalyzer.Evaluate(entry, stats, _session.Elapsed);
+            var verdict = AnalysisEngine.Evaluate(entry, stats, _session.Elapsed);
             entry.FirewallBlocked = entry.Path != null && _blockedPaths.Contains(entry.Path);
+            _verdictsByPid[pid] = verdict;
             Entities.ApplyProcessEntry(entry);   // 实体库登记（身份/实例）
 
             if (!_rowsByPid.TryGetValue(pid, out var row))
@@ -358,7 +440,7 @@ public sealed class MainViewModel : VmBase, IDisposable
                 _rowsByPid[pid] = row;
                 Rows.Add(row);
             }
-            row.Update(entry, stats, _connsByPid.TryGetValue(pid, out var cl) ? cl.Count : 0);
+            row.Update(entry, stats, _connsByPid.TryGetValue(pid, out var cl) ? cl.Count : 0, verdict);
         }
 
         foreach (var kv in _rowsByPid.Where(kv => !active.Contains(kv.Key)).ToList())
@@ -458,8 +540,31 @@ public sealed class MainViewModel : VmBase, IDisposable
         };
 
         DetailRisks.Clear();
-        if (entry.RiskReasons.Count == 0) DetailRisks.Add("未发现可疑点");
-        else foreach (var r in entry.RiskReasons) DetailRisks.Add("• " + r);
+        var verdict = _verdictsByPid.TryGetValue(row.Pid, out var vv) ? vv : null;
+        if (verdict == null)
+        {
+            DetailVerdict = "分析中…";
+            DetailVerdictBrush = UiBrushes.Dim;
+            DetailRisks.Add("（分析尚未完成）");
+        }
+        else
+        {
+            DetailVerdict = $"[{verdict.Status switch { VerdictStatus.HighRisk => "高风险", VerdictStatus.Attention => "值得关注", VerdictStatus.Unknown => "未知", _ => "正常" }}] {verdict.Summary}";
+            DetailVerdictBrush = verdict.Status switch
+            {
+                VerdictStatus.HighRisk => UiBrushes.Red,
+                VerdictStatus.Attention => UiBrushes.Amber,
+                VerdictStatus.Unknown => UiBrushes.Dim,
+                _ => UiBrushes.Green,
+            };
+            if (verdict.Evidence.Count == 0) DetailRisks.Add("无独立证据项。判定依据：签名与位置信息（见上方签名/路径）");
+            else foreach (var ev in verdict.Evidence)
+            {
+                DetailRisks.Add($"• {ev.Statement}" +
+                    (ev.Basis != null ? $"\n   依据：{ev.Basis}" : "") +
+                    (ev.Caveat != null ? $"\n   误报可能/说明：{ev.Caveat}" : ""));
+            }
+        }
 
         DetailDns.Clear();
         var doms = Dns.RecentDomains(entry.Pid);
@@ -472,7 +577,8 @@ public sealed class MainViewModel : VmBase, IDisposable
 
         RaiseAll(nameof(DetailName), nameof(DetailCompany), nameof(DetailPid), nameof(DetailPath),
             nameof(DetailSignature), nameof(DetailSignatureBrush), nameof(DetailIcon),
-            nameof(DetailParent), nameof(DetailCmdLine), nameof(DetailServices), nameof(DetailIdentity));
+            nameof(DetailParent), nameof(DetailCmdLine), nameof(DetailServices), nameof(DetailIdentity),
+            nameof(DetailVerdict), nameof(DetailVerdictBrush));
     }
 
     // ================= 目的地 / 端口 / 配置 =================

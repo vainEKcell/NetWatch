@@ -120,7 +120,7 @@
         </Border>
 
         <!-- ================= 主区：7 页 ================= -->
-        <TabControl TabStripPlacement="Left" Margin="8">
+        <TabControl x:Name="MainTabs" TabStripPlacement="Left" Margin="8">
 
             <!-- ========== 1. 总览 ========== -->
             <TabItem Header="总览">
@@ -135,6 +135,17 @@
                               RowStyle="{StaticResource ProcRow}" Sorting="OnProcessSort"
                               SelectedItem="{Binding Selected}" SelectionMode="Single"
                               EnableRowVirtualization="True">
+                        <DataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="🔍 查看此进程的相关事件" Click="OnCmRelatedEvents"/>
+                                <MenuItem Header="复制详情" Click="OnCmCopyDetails"/>
+                                <MenuItem Header="打开所在文件夹" Click="OnCmOpenFolder"/>
+                                <MenuItem Header="🌐 浏览器查询此文件公开情报（会联网）" Click="OnCmQueryIntel"/>
+                                <Separator/>
+                                <MenuItem Header="🚫 禁止联网" Click="OnCmBlock"/>
+                                <MenuItem Header="恢复联网" Click="OnCmUnblock"/>
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="风险" Width="46" SortMemberPath="Risk">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -231,14 +242,19 @@
                                                    Foreground="{StaticResource DimBrush}"/>
                                         <TextBlock Text="数字签名" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailSignature}" Foreground="{Binding DetailSignatureBrush}"/>
-                                        <TextBlock Text="风险提示（提示 ≠ 确诊病毒）" Style="{StaticResource SectionHeader}"/>
-                                        <ItemsControl ItemsSource="{Binding DetailRisks}">
+                                        <TextBlock Text="分析结论（提示 ≠ 确诊）" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{Binding DetailVerdict}" Foreground="{Binding DetailVerdictBrush}"
+                                                   FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                        <ItemsControl ItemsSource="{Binding DetailRisks}" Margin="0,3,0,0">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,1"/>
+                                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,1"
+                                                               Foreground="{StaticResource DimBrush}"/>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
+                                        <Button Content="🔍 查看此进程的相关事件" Command="{Binding ShowRelatedEventsCommand}"
+                                                Margin="0,8,0,0" HorizontalAlignment="Left"/>
                                         <TextBlock Text="当前连接" Style="{StaticResource SectionHeader}"/>
                                         <DataGrid ItemsSource="{Binding SelectedConns}" MaxHeight="190"
                                                   CanUserSortColumns="False" RowHeight="26">
@@ -425,10 +441,21 @@
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="导出 CSV" Command="{Binding ExportCommand}"/>
                         <Button Content="清空" Command="{Binding ClearEventsCommand}" Margin="8,0,0,0"/>
-                        <TextBlock Text="记录：新连接 / 断开 / 单次 ≥1MB 传输 / DNS 与配置告警"
+                        <Border x:Name="EventsFilterChip" Background="#33E3A836" CornerRadius="4" Padding="10,4"
+                                Margin="14,0,0,0" Visibility="{Binding EventsFilterVisible, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding EventsFilterText}" Foreground="#F0C674"/>
+                        </Border>
+                        <Button Content="清除过滤" Command="{Binding ClearEventsFilterCommand}" Margin="6,0,0,0"
+                                Visibility="{Binding EventsFilterVisible, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock Text="记录：新连接 / 断开 / 单次 ≥1MB 传输 / DNS 与配置提示"
                                    Foreground="{StaticResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
                     </StackPanel>
                     <DataGrid ItemsSource="{Binding Events}" CanUserSortColumns="False">
+                        <DataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="只看此进程的相关事件" Click="OnCmFilterEventPid"/>
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="时间" Binding="{Binding TimeText}" Width="70"/>
                             <DataGridTemplateColumn Header="事件" Width="105">

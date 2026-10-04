@@ -18,6 +18,7 @@ public partial class MainWindow : Window
         _vm = new MainViewModel();
         DataContext = _vm;
         _vm.ChartPush += (u, d) => Chart.Push(u, d);
+        _vm.NavigateToEventsRequested += () => MainTabs.SelectedIndex = 4; // 事件流
         InitTray();
     }
 
@@ -82,5 +83,20 @@ public partial class MainWindow : Window
         if (RbAli.IsChecked == true) _vm.DohProviderIndex = 0;
         else if (RbPod.IsChecked == true) _vm.DohProviderIndex = 1;
         else if (RbCf.IsChecked == true) _vm.DohProviderIndex = 2;
+    }
+
+    // ---------- 右键菜单（P2 调查联动） ----------
+
+    private void OnCmRelatedEvents(object sender, RoutedEventArgs e) => _vm.ShowRelatedEventsForSelection();
+    private void OnCmCopyDetails(object sender, RoutedEventArgs e) => _vm.CopyDetails();
+    private void OnCmOpenFolder(object sender, RoutedEventArgs e) => _vm.OpenProcessFolder();
+    private void OnCmQueryIntel(object sender, RoutedEventArgs e) => _ = _vm.QuerySelectedFileIntelAsync();
+    private void OnCmBlock(object sender, RoutedEventArgs e) => _vm.BlockSelected();
+    private void OnCmUnblock(object sender, RoutedEventArgs e) => _vm.UnblockSelectedRow();
+
+    private void OnCmFilterEventPid(object sender, RoutedEventArgs e)
+    {
+        if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: EventRowVM ev } && ev.Pid > 0)
+            _vm.FilterEventsByPid(ev.Pid);
     }
 }
