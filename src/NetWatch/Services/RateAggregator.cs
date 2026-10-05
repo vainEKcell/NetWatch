@@ -50,13 +50,15 @@ public sealed class RateAggregator
         }
     }
 
-    /// UI 线程每秒调用：清空队列、推进速率窗口。logSink 收到本秒需要记入事件流的条目。
-    public void Tick(bool includeLoopback, List<NetEvent> logSink)
+    /// UI 线程每秒调用：清空队列、推进速率窗口。logSink 收到本秒需要记入事件流的条目；
+    /// trafficSink（可选）收到全部流量事件（供身份→目的地关系记账）。
+    public void Tick(bool includeLoopback, List<NetEvent> logSink, Action<NetEvent>? trafficSink = null)
     {
         while (_logQueue.TryDequeue(out var le)) logSink.Add(le);
 
         while (_queue.TryDequeue(out var e))
         {
+            trafficSink?.Invoke(e);
             if (!includeLoopback && e.IsLoopback) continue;
 
             var s = _stats.GetOrAdd(e.Pid, _ => new PidStats());

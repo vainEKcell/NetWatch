@@ -500,6 +500,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -534,6 +535,46 @@
                     </Grid>
 
                     <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,8,0,0">
+                        <StackPanel>
+                            <TextBlock Text="数据与隐私设置（行为基线是跨会话的“正常/陌生”判断依据，仅存本机）"
+                                       Style="{StaticResource SectionHeader}"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="基线保留" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <ComboBox x:Name="CbBaselineDays" MinWidth="92" SelectionChanged="OnBaselineDaysChanged">
+                                    <ComboBoxItem Content="30 天" Tag="30"/>
+                                    <ComboBoxItem Content="90 天" Tag="90" IsSelected="True"/>
+                                    <ComboBoxItem Content="180 天" Tag="180"/>
+                                    <ComboBoxItem Content="365 天" Tag="365"/>
+                                    <ComboBoxItem Content="不限" Tag="0"/>
+                                </ComboBox>
+                                <TextBlock Text="证据流保留" VerticalAlignment="Center" Margin="18,0,6,0"/>
+                                <ComboBox x:Name="CbEvidenceDays" MinWidth="92" SelectionChanged="OnEvidenceDaysChanged">
+                                    <ComboBoxItem Content="3 天" Tag="3"/>
+                                    <ComboBoxItem Content="7 天" Tag="7" IsSelected="True"/>
+                                    <ComboBoxItem Content="14 天" Tag="14"/>
+                                    <ComboBoxItem Content="30 天" Tag="30"/>
+                                    <ComboBoxItem Content="90 天" Tag="90"/>
+                                    <ComboBoxItem Content="不限" Tag="0"/>
+                                </ComboBox>
+                                <TextBlock Text="证据容量上限" VerticalAlignment="Center" Margin="18,0,6,0"/>
+                                <ComboBox x:Name="CbEvidenceCap" MinWidth="92" SelectionChanged="OnEvidenceCapChanged">
+                                    <ComboBoxItem Content="256 MB" Tag="256"/>
+                                    <ComboBoxItem Content="512 MB" Tag="512" IsSelected="True"/>
+                                    <ComboBoxItem Content="1 GB" Tag="1024"/>
+                                    <ComboBoxItem Content="2 GB" Tag="2048"/>
+                                </ComboBox>
+                                <CheckBox x:Name="ChkPauseBaseline" Content="暂停基线学习"
+                                          Checked="OnPauseBaselineChanged" Unchecked="OnPauseBaselineChanged"
+                                          Margin="18,0,0,0" VerticalAlignment="Center"
+                                          ToolTip="暂停后不再写入行为基线（证据流照常记录）"/>
+                                <Button Content="立即清理" Click="OnCleanupNow" Margin="18,0,0,0"/>
+                                <TextBlock Text="{Binding StorageInfo}" Foreground="{StaticResource DimBrush}"
+                                           VerticalAlignment="Center" Margin="14,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,8,0,0">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}"
                                        Text="配置变更历史（DNS / 代理 / hosts 被改动会在此与事件流中告警）"/>

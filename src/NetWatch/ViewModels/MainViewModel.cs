@@ -32,7 +32,13 @@ public sealed class MainViewModel : VmBase, IDisposable
     /// P1 统一事件库与实体仓库（事实层；P2 证据链、P3 持久化的数据源）
     public EventStore Store { get; } = new();
     public EntityStore Entities { get; } = new();
+    public AppSettings Settings { get; } = AppSettings.Load();
+    public BaselineStore Baseline { get; }
+    public EvidenceWriter Evidence { get; }
+    private readonly HashSet<string> _firstSeenQueried = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentQueue<(bool Start, int Pid, int? Parent, string? Image, string? Cmd, DateTime T)> _procEvents = new();
+
+    public string StorageInfo { get; private set; } = "";
 
     // ---------- 集合 ----------
     public ObservableCollection<ProcessRowVM> Rows { get; } = new();
@@ -66,6 +72,9 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     public MainViewModel()
     {
+        Baseline = new BaselineStore(Settings);
+        Evidence = new EvidenceWriter(Settings);
+
         Monitor.OnNetEvent += e => { Dns.InspectNetEvent(e); Agg.Enqueue(e); };
         Monitor.OnDnsEvent += d => Dns.OnDns(d);
         Monitor.OnProcessEvent += (start, pid, parent, image, cmd, t) => _procEvents.Enqueue((start, pid, parent, image, cmd, t));
@@ -291,12 +300,12 @@ public sealed class MainViewModel : VmBase, IDisposable
             }
 
             var logs = new List<NetEvent>();
-            if (Paused) Agg.Drain(); else Agg.Tick(!HideLoopback, logs);
+            if (Paused) Agg.Drain(); else Agg.Tick(!HideLoopback, logs, OnTrafficObserved);
             foreach (var le in logs)
             {
                 var name = Tracker.Get(le.Pid).Name;
                 AddEvent(EventRowVM.FromNet(le, name, Dns));
-                Store.Add(new EventRecord
+                AddStoreRecord(new EventRecord
                 {
                     TimeUtc = le.TimeUtc,
                     Kind = le.Kind switch
@@ -318,7 +327,7 @@ public sealed class MainViewModel : VmBase, IDisposable
             {
                 DnsStream.Add(DnsRowVM.From(it, Tracker.Get(it.Pid).Name));
                 while (DnsStream.Count > 400) DnsStream.RemoveAt(0);
-                Store.Add(new EventRecord
+                AddStoreRecord(new EventRecord
                 {
                     TimeUtc = it.TimeUtc, Kind = EventKindEx.DnsResolve, Pid = it.Pid,
                     IdentityKey = Entities.GetProcess(it.Pid)?.IdentityKey, Domain = it.Domain, Text = it.AlertText,
@@ -327,14 +336,14 @@ public sealed class MainViewModel : VmBase, IDisposable
             foreach (var a in Dns.DrainAlerts())
             {
                 AddEvent(EventRowVM.FromAlert(a.Time, a.Level, a.Text));
-                Store.Add(new EventRecord { TimeUtc = a.Time, Kind = EventKindEx.Alert, Text = a.Text, Level = a.Level });
+                AddStoreRecord(new EventRecord { TimeUtc = a.Time, Kind = EventKindEx.Alert, Text = a.Text, Level = a.Level });
             }
 
             // 进程生命周期事件（内核 rundown/启动/退出）→ 实体库 + 事件库
             while (_procEvents.TryDequeue(out var pe))
             {
                 Entities.ApplyKernelProcessEvent(pe.Start, pe.Pid, pe.Parent, pe.Image, pe.Cmd, pe.T);
-                Store.Add(new EventRecord
+                AddStoreRecord(new EventRecord
                 {
                     TimeUtc = pe.T,
                     Kind = pe.Start ? EventKindEx.ProcessStart : EventKindEx.ProcessStop,
@@ -342,6 +351,12 @@ public sealed class MainViewModel : VmBase, IDisposable
                     Text = pe.Start ? $"{pe.Image ?? ""} {pe.Cmd ?? ""}".Trim() : pe.Image,
                 });
             }
+
+            // P3 持久化：证据流落盘 + 基线批量刷写 + 周期清理
+            Evidence.FlushIfDue();
+            if (_tickCount % 8 == 0) FlushBaseline();
+            if (_tickCount % 1800 == 500) _ = Task.Run(() => RunRetentionCleanup(false));
+            if (_tickCount % 30 == 10) UpdateStorageInfo();
 
             RebuildConnIndex();
             UpdateRows();
@@ -371,6 +386,75 @@ public sealed class MainViewModel : VmBase, IDisposable
     }
 
     private void AddSystemEvent(string text) => AddEvent(EventRowVM.FromSystem(text));
+
+    // ================= P3 持久化 =================
+
+    private void AddStoreRecord(EventRecord rec)
+    {
+        Store.Add(rec);
+        Evidence.Enqueue(rec);
+    }
+
+    /// 流量事件 → (身份, 目的地) 关系记账（域名优先；未解析身份与回环不计）
+    private void OnTrafficObserved(NetEvent e)
+    {
+        if (e.RemoteIp == null || e.IsLoopback || e.Pid <= 0) return;
+        var domain = Dns.LookupDomain(e.RemoteIp);
+        Entities.NoteDestination(domain, e.RemoteIp, e.TimeUtc);
+        var identityKey = Entities.GetProcess(e.Pid)?.IdentityKey;
+        if (string.IsNullOrEmpty(identityKey) || identityKey!.StartsWith("unk:", StringComparison.Ordinal)) return;
+        var destKey = string.IsNullOrEmpty(domain) ? $"ip:{e.RemoteIp}" : $"d:{domain.ToLowerInvariant()}";
+        Entities.NoteIdentityDestTraffic(identityKey, destKey, e.IsSend, e.Bytes, e.TimeUtc);
+    }
+
+    private DateTime _lastFlushUtc = DateTime.UtcNow;
+
+    private void FlushBaseline()
+    {
+        if (Settings.BaselinePaused) return;
+        try
+        {
+            var cutoff = _lastFlushUtc;
+            _lastFlushUtc = DateTime.UtcNow;
+            var ids = Entities.Identities.Values
+                .Where(i => i.LastSeenUtc >= cutoff && !i.Key.StartsWith("unk:", StringComparison.Ordinal)).ToList();
+            var dests = Entities.Destinations.Values.Where(d => d.LastSeenUtc >= cutoff).ToList();
+            var relations = Entities.DrainRelationDeltas();
+            if (ids.Count == 0 && dests.Count == 0 && relations.Count == 0) return;
+            Baseline.Flush(ids, dests, relations);
+        }
+        catch (Exception ex) { Log.Error("基线刷写调度失败", ex); }
+    }
+
+    public void RunRetentionCleanup(bool manual)
+    {
+        try
+        {
+            var cutoff = Settings.BaselineRetentionDays > 0
+                ? DateTime.UtcNow.AddDays(-Settings.BaselineRetentionDays)
+                : DateTime.MinValue;
+            int removed = Baseline.Cleanup(cutoff);
+            Evidence.Cleanup();
+            UpdateStorageInfo();
+            if (manual)
+                MessageBox.Show($"清理完成：基线删除 {removed} 行。\n证据流保留 {Settings.EvidenceRetentionDays} 天 / 容量上限 {Settings.EvidenceMaxSizeMB} MB。",
+                    "NetWatch", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex) { Log.Error("保留策略清理失败", ex); }
+    }
+
+    private void UpdateStorageInfo()
+    {
+        var (eb, ef) = Evidence.Stats();
+        StorageInfo = $"基线库 {Util.FormatBytes(BaselineStore.DbSizeBytes)} · 证据 {Util.FormatBytes(eb)}（{ef} 个文件）" +
+                      (Settings.BaselinePaused ? " · 基线学习已暂停" : "");
+        Raise(nameof(StorageInfo));
+    }
+
+    public void SetBaselineRetention(int days) { Settings.BaselineRetentionDays = days; Settings.Save(); UpdateStorageInfo(); }
+    public void SetEvidenceRetention(int days) { Settings.EvidenceRetentionDays = days; Settings.Save(); Evidence.Cleanup(); }
+    public void SetEvidenceCap(int mb) { Settings.EvidenceMaxSizeMB = mb; Settings.Save(); Evidence.Cleanup(); }
+    public void SetBaselinePaused(bool paused) { Settings.BaselinePaused = paused; Settings.Save(); UpdateStorageInfo(); }
 
     /// 进程名是异步解析的：占位名（PID xxx）出现后，回填最近事件/解析行的名字
     private void RefreshRecentNames()
@@ -433,6 +517,15 @@ public sealed class MainViewModel : VmBase, IDisposable
             entry.FirewallBlocked = entry.Path != null && _blockedPaths.Contains(entry.Path);
             _verdictsByPid[pid] = verdict;
             Entities.ApplyProcessEntry(entry);   // 实体库登记（身份/实例）
+
+            // 跨会话“首见于”回填（每个身份只查一次库）
+            var identityKey = Entities.GetProcess(pid)?.IdentityKey;
+            if (!string.IsNullOrEmpty(identityKey) && !identityKey.StartsWith("unk:", StringComparison.Ordinal)
+                && _firstSeenQueried.Add(identityKey))
+            {
+                var id = Entities.GetIdentity(identityKey);
+                if (id != null) _ = Task.Run(() => Baseline.BackfillIdentity(id));
+            }
 
             if (!_rowsByPid.TryGetValue(pid, out var row))
             {
@@ -885,6 +978,8 @@ public sealed class MainViewModel : VmBase, IDisposable
     public void Dispose()
     {
         _timer.Stop();
+        FlushBaseline();
+        Evidence.FlushIfDue();
         Monitor.Dispose();
         Config.Dispose();
         Tracker.Dispose();

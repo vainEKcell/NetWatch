@@ -137,6 +137,50 @@ public sealed class EntityStore
 
     // ---------- 服务 ----------
 
+    // ---------- 关系（身份 → 目的地）：P3 基线记账的增量源 ----------
+
+    public sealed class RelationDelta
+    {
+        public long CountDelta;
+        public long UpDelta;
+        public long DownDelta;
+        public DateTime FirstSeenUtc = DateTime.UtcNow;
+        public DateTime LastSeenUtc = DateTime.UtcNow;
+    }
+
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, RelationDelta>> _relations =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public void NoteIdentityDestTraffic(string identityKey, string destKey, bool isSend, long bytes, DateTime utc)
+    {
+        if (identityKey.StartsWith("unk:", StringComparison.Ordinal) || string.IsNullOrEmpty(destKey)) return;
+        var rel = _relations.GetOrAdd(identityKey, _ =>
+            new ConcurrentDictionary<string, RelationDelta>(StringComparer.OrdinalIgnoreCase));
+        if (!rel.ContainsKey(destKey) && rel.Count >= 500) return; // 单身份目的地软上限
+        var d = rel.GetOrAdd(destKey, _ => new RelationDelta());
+        if (isSend) Interlocked.Add(ref d.UpDelta, bytes);
+        else Interlocked.Add(ref d.DownDelta, bytes);
+        Interlocked.Increment(ref d.CountDelta);
+        d.LastSeenUtc = utc;
+    }
+
+    /// 取走本周期增量并清零（UI 线程调用，与写入线程同源无竞争）
+    public List<RelationRow> DrainRelationDeltas()
+    {
+        var list = new List<RelationRow>();
+        foreach (var kv in _relations)
+            foreach (var kv2 in kv.Value)
+            {
+                var d = kv2.Value;
+                long c = Interlocked.Exchange(ref d.CountDelta, 0);
+                long u = Interlocked.Exchange(ref d.UpDelta, 0);
+                long dn = Interlocked.Exchange(ref d.DownDelta, 0);
+                if (c == 0 && u == 0 && dn == 0) continue;
+                list.Add(new RelationRow(kv.Key, kv2.Key, c, u, dn, d.FirstSeenUtc, d.LastSeenUtc));
+            }
+        return list;
+    }
+
     /// 每 30 秒调用一次：枚举系统服务并按 PID 归组
     public void RefreshServices()
     {

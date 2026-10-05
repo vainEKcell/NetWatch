@@ -99,4 +99,52 @@ public partial class MainWindow : Window
         if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: EventRowVM ev } && ev.Pid > 0)
             _vm.FilterEventsByPid(ev.Pid);
     }
+
+    // ---------- 数据与隐私设置（P3） ----------
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        // 按已保存设置回填下拉框（XAML 解析期的默认选中已被 _vm==null 守卫忽略）
+        SetCombo(CbBaselineDays, _vm.Settings.BaselineRetentionDays);
+        SetCombo(CbEvidenceDays, _vm.Settings.EvidenceRetentionDays);
+        SetCombo(CbEvidenceCap, _vm.Settings.EvidenceMaxSizeMB);
+        ChkPauseBaseline.IsChecked = _vm.Settings.BaselinePaused;
+    }
+
+    private static void SetCombo(System.Windows.Controls.ComboBox cb, int tag)
+    {
+        foreach (ComboBoxItem item in cb.Items)
+            if (item.Tag is string s && int.TryParse(s, out var v) && v == tag)
+            { cb.SelectedItem = item; return; }
+    }
+
+    private void OnBaselineDaysChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_vm == null) return;
+        if ((sender as ComboBox)?.SelectedItem is ComboBoxItem it && it.Tag is string s && int.TryParse(s, out var d))
+            _vm.SetBaselineRetention(d);
+    }
+
+    private void OnEvidenceDaysChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_vm == null) return;
+        if ((sender as ComboBox)?.SelectedItem is ComboBoxItem it && it.Tag is string s && int.TryParse(s, out var d))
+            _vm.SetEvidenceRetention(d);
+    }
+
+    private void OnEvidenceCapChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_vm == null) return;
+        if ((sender as ComboBox)?.SelectedItem is ComboBoxItem it && it.Tag is string s && int.TryParse(s, out var v))
+            _vm.SetEvidenceCap(v);
+    }
+
+    private void OnPauseBaselineChanged(object sender, RoutedEventArgs e)
+    {
+        if (_vm == null) return;
+        _vm.SetBaselinePaused(ChkPauseBaseline.IsChecked == true);
+    }
+
+    private void OnCleanupNow(object sender, RoutedEventArgs e) => _vm.RunRetentionCleanup(manual: true);
 }
