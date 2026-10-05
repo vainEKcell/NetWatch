@@ -35,6 +35,11 @@ public sealed class MainViewModel : VmBase, IDisposable
     public AppSettings Settings { get; } = AppSettings.Load();
     public BaselineStore Baseline { get; }
     public EvidenceWriter Evidence { get; }
+    public FirewallAuditWatcher Audit { get; } = new();
+    public SysmonWatcher Sysmon { get; } = new();
+    private readonly ConcurrentQueue<BlockedConnectionEvent> _blockedEvents = new();
+    private readonly ConcurrentDictionary<int, string> _userByPid = new();
+    private int _blockedConnCount;
     private readonly HashSet<string> _firstSeenQueried = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentQueue<(bool Start, int Pid, int? Parent, string? Image, string? Cmd, DateTime T)> _procEvents = new();
 
@@ -116,8 +121,61 @@ public sealed class MainViewModel : VmBase, IDisposable
 
         Monitor.Start();
         RefreshBlocked();
+        InitAudit();
+        InitSysmon();
         AddSystemEvent("监控已开始。说明：本工具只能看到「谁在连谁、传多少」，看不到加密内容；风险提示 ≠ 确诊病毒。");
     }
+
+    // ================= 防火墙拦截审计（5157）与 Sysmon =================
+
+    public string AuditStatusText { get; private set; } = "";
+    public string SysmonStatusText { get; private set; } = "";
+    public string BlockedConnCountText { get; private set; } = "";
+    public string DetailUser { get; private set; } = "—";
+
+    private void InitAudit()
+    {
+        var (s, f) = FirewallAuditWatcher.QueryAuditState();
+        if (s || f) Audit.Start(OnBlockedConnection);
+        UpdateAuditStatus();
+    }
+
+    private void InitSysmon()
+    {
+        if (SysmonWatcher.IsChannelPresent())
+            Sysmon.Start((pid, user) => _userByPid[pid] = user);
+        UpdateAuditStatus();
+    }
+
+    private void UpdateAuditStatus()
+    {
+        var (s, f) = FirewallAuditWatcher.QueryAuditState();
+        AuditStatusText = (s || f)
+            ? "拦截审计：已启用（被防火墙拦截的连接实时显示于事件流）"
+            : "拦截审计：未启用";
+        SysmonStatusText = Sysmon.Available
+            ? "Sysmon：已检测到（运行用户富化生效）"
+            : "Sysmon：未安装（可选增强，不影响功能）";
+        RaiseAll(nameof(AuditStatusText), nameof(SysmonStatusText));
+    }
+
+    public void EnableFirewallAudit()
+    {
+        var r = MessageBox.Show(
+            "将在系统审核策略中启用「审核筛选平台连接」（auditpol 命令，完全可逆），\n用于实时显示被 Windows 防火墙拦截的连接。继续？",
+            "启用拦截审计", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (r != MessageBoxResult.Yes) return;
+        if (FirewallAuditWatcher.EnableAudit())
+        {
+            Audit.Start(OnBlockedConnection);
+            UpdateAuditStatus();
+            AddSystemEvent("防火墙拦截审计已启用——被拦截的连接将实时出现在事件流");
+        }
+        else
+            MessageBox.Show("启用失败（需要管理员权限）。", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+
+    private void OnBlockedConnection(BlockedConnectionEvent b) => _blockedEvents.Enqueue(b);
 
     // ================= 选项与顶部 =================
 
@@ -353,11 +411,35 @@ public sealed class MainViewModel : VmBase, IDisposable
                 });
             }
 
+            // 防火墙拦截审计事件（5157）
+            while (_blockedEvents.TryDequeue(out var b))
+            {
+                _blockedConnCount++;
+                var bname = b.Pid > 0 ? Tracker.Get(b.Pid).Name : "未知进程";
+                AddEvent(EventRowVM.FromBlocked(b, bname));
+                AddStoreRecord(new EventRecord
+                {
+                    TimeUtc = b.TimeUtc,
+                    Kind = EventKindEx.Alert,
+                    Pid = b.Pid,
+                    IdentityKey = Entities.GetProcess(b.Pid)?.IdentityKey,
+                    RemoteIp = b.RemoteIp,
+                    RemotePort = b.RemotePort,
+                    Text = $"防火墙拦截：{b.AppPath ?? bname} → {b.RemoteIp}:{b.RemotePort} ({b.Protocol})",
+                    Level = RiskLevel.Medium,
+                });
+            }
+
             // P3 持久化：证据流落盘 + 基线批量刷写 + 周期清理
             Evidence.FlushIfDue();
             if (_tickCount % 8 == 0) FlushBaseline();
             if (_tickCount % 1800 == 500) _ = Task.Run(() => RunRetentionCleanup(false));
             if (_tickCount % 30 == 10) UpdateStorageInfo();
+            if (_blockedConnCount > 0)
+            {
+                BlockedConnCountText = $"防火墙拦截 {_blockedConnCount} 条";
+                Raise(nameof(BlockedConnCountText));
+            }
 
             RebuildConnIndex();
             UpdateRows();
@@ -689,6 +771,8 @@ public sealed class MainViewModel : VmBase, IDisposable
             ? $"PID {pp}" + (Entities.GetProcess(pp)?.Name is { } pn ? $" · {pn}" : "")
             : "未知（内核 rundown 未覆盖该进程时不可得）";
         DetailCmdLine = inst?.CommandLine ?? "（未采集到）";
+        DetailUser = _userByPid.TryGetValue(entry.Pid, out var u) ? u
+            : (Sysmon.Available ? "（暂无 Sysmon 网络事件记录）" : "（需安装 Sysmon 后可用）");
         var svcs = Entities.ServicesOf(entry.Pid);
         DetailServices = svcs.Count == 0
             ? "（非服务宿主，或服务枚举尚未完成）"
@@ -751,7 +835,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         RaiseAll(nameof(DetailName), nameof(DetailCompany), nameof(DetailPid), nameof(DetailPath),
             nameof(DetailSignature), nameof(DetailSignatureBrush), nameof(DetailIcon),
             nameof(DetailParent), nameof(DetailCmdLine), nameof(DetailServices), nameof(DetailIdentity),
-            nameof(DetailVerdict), nameof(DetailVerdictBrush));
+            nameof(DetailVerdict), nameof(DetailVerdictBrush), nameof(DetailUser));
     }
 
     // ================= 目的地 / 端口 / 配置 =================
@@ -1060,6 +1144,8 @@ public sealed class MainViewModel : VmBase, IDisposable
         _timer.Stop();
         FlushBaseline();
         Evidence.FlushIfDue();
+        Audit.Dispose();
+        Sysmon.Dispose();
         Monitor.Dispose();
         Config.Dispose();
         Tracker.Dispose();

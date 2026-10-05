@@ -153,6 +153,24 @@ public sealed class EventRowVM : VmBase
         return vm;
     }
 
+    public static EventRowVM FromBlocked(BlockedConnectionEvent b, string procName)
+    {
+        var vm = new EventRowVM
+        {
+            Pid = b.Pid,
+            RawTime = b.TimeUtc.ToLocalTime(),
+            TimeText = b.TimeUtc.ToLocalTime().ToString("HH:mm:ss"),
+            KindText = "防火墙拦截",
+            KindBrush = UiBrushes.Red,
+            RawKind = "防火墙拦截",
+            Process = procName,
+            Detail = $"{Util.FormatEndpoint(b.RemoteIp, b.RemotePort)} ({b.Protocol})" +
+                     (string.IsNullOrEmpty(b.AppPath) ? "" : $"  ·  {b.AppPath}"),
+        };
+        vm.RaiseAll(nameof(TimeText), nameof(KindText), nameof(KindBrush), nameof(Process), nameof(Detail));
+        return vm;
+    }
+
     public static EventRowVM FromSystem(string text)
     {
         var vm = new EventRowVM

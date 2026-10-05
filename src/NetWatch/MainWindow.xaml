@@ -113,6 +113,7 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <TextBlock Text="{Binding ConnCountText}" Foreground="{StaticResource DimBrush}"/>
                     <TextBlock Text="{Binding BlockedCountText}" Foreground="{StaticResource DimBrush}" Margin="18,0,0,0"/>
+                    <TextBlock Text="{Binding BlockedConnCountText}" Foreground="{StaticResource RedBrush}" Margin="18,0,0,0"/>
                     <TextBlock Text="{Binding DnsAlertCountText}" Foreground="{StaticResource AmberBrush}" Margin="18,0,0,0"/>
                 </StackPanel>
                 <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusBrush}"/>
@@ -242,6 +243,9 @@
                                                    Foreground="{StaticResource DimBrush}"/>
                                         <TextBlock Text="父进程" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailParent}" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource DimBrush}"/>
+                                        <TextBlock Text="运行用户（Sysmon 存在时）" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{Binding DetailUser}" TextWrapping="Wrap"
                                                    Foreground="{StaticResource DimBrush}"/>
                                         <TextBlock Text="命令行" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailCmdLine}" TextWrapping="Wrap"
@@ -599,6 +603,14 @@
                                 <Button Content="立即清理" Click="OnCleanupNow" Margin="18,0,0,0"/>
                                 <TextBlock Text="{Binding StorageInfo}" Foreground="{StaticResource DimBrush}"
                                            VerticalAlignment="Center" Margin="14,0,0,0"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="{Binding AuditStatusText}" Foreground="{StaticResource DimBrush}"
+                                           VerticalAlignment="Center"/>
+                                <Button Content="启用拦截审计" Click="OnEnableAudit" Margin="12,0,0,0"
+                                        ToolTip="启用系统审核策略「审核筛选平台连接」（auditpol，可逆），实时显示被防火墙拦截的连接"/>
+                                <TextBlock Text="{Binding SysmonStatusText}" Foreground="{StaticResource DimBrush}"
+                                           VerticalAlignment="Center" Margin="20,0,0,0"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>

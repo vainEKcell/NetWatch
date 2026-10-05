@@ -147,4 +147,6 @@ public partial class MainWindow : Window
     }
 
     private void OnCleanupNow(object sender, RoutedEventArgs e) => _vm.RunRetentionCleanup(manual: true);
+
+    private void OnEnableAudit(object sender, RoutedEventArgs e) => _vm.EnableFirewallAudit();
 }

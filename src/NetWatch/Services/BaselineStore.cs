@@ -54,6 +54,10 @@ public sealed class BaselineStore
                 domain TEXT,
                 first_seen INTEGER NOT NULL,
                 last_seen INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS identity_paths(
+                identity_key TEXT NOT NULL,
+                path TEXT NOT NULL,
+                PRIMARY KEY(identity_key, path));
             """);
         // unk: 身份（PID 级临时身份）无跨会话意义，不入库；清掉历史脏数据
         Exec("DELETE FROM identities WHERE key LIKE 'unk:%';");
@@ -63,6 +67,7 @@ public sealed class BaselineStore
     // ---------- 查询 ----------
 
     /// 跨会话“首见于”回填：库里若更早，则更新内存身份。
+    /// 身份合并：同一文件路径曾以其他身份（如未签名时期的路径身份）出现过，取全部相关身份的最早 first_seen。
     /// 使用独立短连接——主连接被 UI 线程的刷写占用，SqliteConnection 非线程安全。
     public void BackfillIdentity(SoftwareIdentity id)
     {
@@ -70,16 +75,37 @@ public sealed class BaselineStore
         {
             using var conn = new SqliteConnection($"Data Source={AppSettings.DbPath};Mode=ReadOnly");
             conn.Open();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT first_seen FROM identities WHERE key=$k";
-            cmd.Parameters.AddWithValue("$k", id.Key);
-            var obj = cmd.ExecuteScalar();
-            if (obj is long first && first > 0)
+            DateTime? earliest = null;
+
+            using (var cmd = conn.CreateCommand())
             {
-                var utc = DateTimeOffset.FromUnixTimeSeconds(first).UtcDateTime;
-                if (utc < id.FirstSeenUtc) id.FirstSeenUtc = utc;
-                id.LastSeenUtc = DateTime.UtcNow;
+                cmd.CommandText = "SELECT MIN(first_seen) FROM identities WHERE key=$k";
+                cmd.Parameters.AddWithValue("$k", id.Key);
+                if (cmd.ExecuteScalar() is long own && own > 0)
+                    earliest = DateTimeOffset.FromUnixTimeSeconds(own).UtcDateTime;
             }
+
+            using (var cmd = conn.CreateCommand())
+            {
+                // 同路径的其他身份（未签名→签名的演变即由此合并）
+                cmd.CommandText = """
+                    SELECT MIN(i.first_seen)
+                    FROM identities i
+                    WHERE i.key IN (
+                        SELECT p2.identity_key FROM identity_paths p2
+                        WHERE p2.path IN (SELECT path FROM identity_paths WHERE identity_key = $k))
+                    """;
+                cmd.Parameters.AddWithValue("$k", id.Key);
+                if (cmd.ExecuteScalar() is long merged && merged > 0)
+                {
+                    var utc = DateTimeOffset.FromUnixTimeSeconds(merged).UtcDateTime;
+                    if (earliest == null || utc < earliest) earliest = utc;
+                }
+            }
+
+            if (earliest != null && earliest < id.FirstSeenUtc)
+                id.FirstSeenUtc = earliest.Value;
+            id.LastSeenUtc = DateTime.UtcNow;
         }
         catch (Exception ex) { Log.Error("基线回填失败", ex); }
     }
@@ -112,6 +138,16 @@ public sealed class BaselineStore
                 cmd.Parameters.AddWithValue("$fs", ToUnix(id.FirstSeenUtc));
                 cmd.Parameters.AddWithValue("$ls", ToUnix(id.LastSeenUtc));
                 cmd.ExecuteNonQuery();
+
+                foreach (var path in id.Paths)
+                {
+                    using var pc = _conn.CreateCommand();
+                    pc.Transaction = tx;
+                    pc.CommandText = "INSERT OR IGNORE INTO identity_paths(identity_key, path) VALUES($k, $p)";
+                    pc.Parameters.AddWithValue("$k", id.Key);
+                    pc.Parameters.AddWithValue("$p", path.ToLowerInvariant());
+                    pc.ExecuteNonQuery();
+                }
             }
 
             foreach (var d in destinations)
