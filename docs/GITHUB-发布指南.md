@@ -40,17 +40,18 @@ git push -u origin main
 
 1. 本地构建安装包：`powershell -ExecutionPolicy Bypass -File build-installer.ps1`
    （产出 `dist\NetWatch-Setup-<版本>.exe`，自包含、目标机无需 .NET）
-2. 打 Tag 并推送：
+2. 构建脚本会自动把成品复制到 **`S:\GitSubmitClass\NetWatch-Release\`**（提审目录旁、独立于 git 仓库——安装包是 Release 附件，不入库）
+3. 打 Tag 并推送：
    ```powershell
    git tag v1.0.0
    git push origin v1.0.0
    ```
-3. 在 GitHub 仓库页 → Releases → Draft a new release → 选择 tag v1.0.0 →
-   标题如「NetWatch v1.0.0」→ 拖入 `dist\NetWatch-Setup-1.0.0.exe` → Publish。
+4. 在 GitHub 仓库页 → Releases → Draft a new release → 选择 tag v1.0.0 →
+   标题如「NetWatch v1.0.0」→ 拖入 `S:\GitSubmitClass\NetWatch-Release\NetWatch-Setup-1.0.0.exe` → Publish。
 
 命令行方式（装了 GitHub CLI 的话）：
 ```powershell
-gh release create v1.0.0 "dist\NetWatch-Setup-1.0.0.exe" --title "NetWatch v1.0.0" --notes "首个公开版本：每进程流量监控、DNS 劫持三层检测、证据链判定、行为基线。"
+gh release create v1.0.0 "S:\GitSubmitClass\NetWatch-Release\NetWatch-Setup-1.0.0.exe" --title "NetWatch v1.0.0" --notes "首个公开版本：每进程流量监控、DNS 劫持三层检测、证据链判定、行为基线。"
 ```
 
 ## 3. 日常迭代
