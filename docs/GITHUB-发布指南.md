@@ -1,14 +1,29 @@
 # GitHub 发布指南（NetWatch）
 
-仓库已就绪：干净的提交链、`.gitignore` 齐全（bin/obj/publish/dist/verify 均不入库）、LICENSE 与 README 完备。以下是从零推送到 GitHub 的完整步骤。
+仓库已就绪：干净的提交链、`.gitignore` 齐全（bin/obj/publish/dist/verify 均不入库）、LICENSE 与 README 完备。
 
-## 1. 首次推送
+## 0. 工作流总览（推荐：GitHub Desktop + 提审目录）
+
+- **开发目录**：`S:\ZWorker\NetWatch`（日常在这里改代码、构建、提交）
+- **提审目录**：`S:\GitSubmitClass\NetWatch`（完整镜像，含全部 git 历史，专供推送前审核与 GitHub Desktop 推送）
+- **同步**：开发完成后运行
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File S:\ZWorker\NetWatch\tools\sync-to-submit.ps1
+  ```
+  脚本会把源码与 `.git` 历史镜像过去（自动排除 bin/obj/publish/dist/verify），并输出目标仓库状态。
+
+**首次用 GitHub Desktop 推送：**
+1. 打开 GitHub Desktop → `File → Add local repository...` → 选择 `S:\GitSubmitClass\NetWatch`
+2. 在 `History` 标签逐个提交审核 diff（这就是推送前的内容审核）
+3. 点 `Publish repository` → 起名 `NetWatch` → 按需选择公开/私有 → Publish
+4. 以后每次：同步脚本跑完后，Desktop 里 `Fetch origin` → 填提交摘要 → `Commit to main` → `Push origin`
+
+## 1. 命令行方式（可选替代）
 
 ```powershell
-cd S:\ZWorker\NetWatch
+cd S:\GitSubmitClass\NetWatch
 
 # 在 github.com 上新建空仓库（不要勾选初始化 README/LICENSE），假设名为 NetWatch
-git branch -M main
 git remote add origin https://github.com/<你的用户名>/NetWatch.git
 git push -u origin main
 ```
