@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.IO;
 using NetWatch.Models;
 using NetWatch.Native;
 
@@ -33,7 +34,8 @@ public sealed class EntityStore
 
     // ---------- 进程实例 ----------
 
-    /// 由 ProcessTracker 的解析结果登记/刷新进程实例，并派生软件身份
+    /// 由 ProcessTracker 的解析结果登记/刷新进程实例，并派生软件身份。
+    /// 受保护进程读不到 MainModule 路径时，退回内核 rundown 命令行中的路径（如杀软 avp.exe）。
     public void ApplyProcessEntry(ProcessEntry e)
     {
         var inst = _processes.GetOrAdd(e.Pid, _ => new ProcessInstance { Pid = e.Pid });
@@ -42,61 +44,79 @@ public sealed class EntityStore
         inst.StartTimeUtc ??= e.StartTimeUtc;
         if (e.Exited) inst.ExitTimeUtc ??= DateTime.UtcNow;
 
-        var key = IdentityKeyFor(e);
+        var effectivePath = e.Path ?? ExtractExePath(inst.CommandLine);
+
+        // 命令行回退路径可补一次签名校验（结果按路径缓存在 Authenticode 内）
+        if (e.Signature == SignatureState.Unknown && !string.IsNullOrEmpty(effectivePath) && File.Exists(effectivePath))
+        {
+            var (st, subj) = Authenticode.Verify(effectivePath);
+            if (st != SignatureState.Unknown) { e.Signature = st; e.SignatureSubject ??= subj; }
+        }
+
+        var key = IdentityKeyFor(e.Pid, effectivePath, e.Signature, e.SignatureSubject, e.ProductName, e.Name);
         inst.IdentityKey = key;
         var id = _identities.GetOrAdd(key, _ => new SoftwareIdentity { Key = key });
         id.LastSeenUtc = DateTime.UtcNow;
         if (id.FirstSeenUtc == default) id.FirstSeenUtc = id.LastSeenUtc;
-        if (!string.IsNullOrEmpty(e.Path)) id.Paths.Add(e.Path!);
+        if (!string.IsNullOrEmpty(effectivePath)) id.Paths.Add(effectivePath);
         if (string.IsNullOrEmpty(id.DisplayName))
             id.DisplayName = string.IsNullOrEmpty(e.Description) ? e.Name : e.Description;
 
-        switch (key)
+        if (key.StartsWith("sig:", StringComparison.Ordinal))
         {
-            case var k when k.StartsWith("sig:", StringComparison.Ordinal):
-                id.Kind = IdentityKind.Signed;
-                id.CertSubject = e.SignatureSubject;
-                break;
-            case var k when k.StartsWith("path:", StringComparison.Ordinal):
-                id.Kind = IdentityKind.PathOnly;
-                break;
-            case var k when k.StartsWith("sys:", StringComparison.Ordinal):
-                id.Kind = IdentityKind.SystemReserved;
-                break;
+            id.Kind = IdentityKind.Signed;
+            id.CertSubject ??= e.SignatureSubject;
         }
-        if (e.SignatureSubject != null) id.CertSubject ??= e.SignatureSubject;
+        else if (key.StartsWith("path:", StringComparison.Ordinal))
+            id.Kind = IdentityKind.PathOnly;
+        else if (key.StartsWith("sys:", StringComparison.Ordinal))
+            id.Kind = IdentityKind.SystemReserved;
+    }
+
+    /// 从命令行提取 exe 路径：引号优先，否则取首个空格前
+    private static string? ExtractExePath(string? cmd)
+    {
+        if (string.IsNullOrWhiteSpace(cmd)) return null;
+        cmd = cmd.Trim();
+        if (cmd.StartsWith('"'))
+        {
+            int q = cmd.IndexOf('"', 1);
+            return q > 1 ? cmd[1..q] : null;
+        }
+        int sp = cmd.IndexOf(' ');
+        return sp > 0 ? cmd[..sp] : cmd;
     }
 
     /// 身份键派生：签名（CN+产品名）优先，路径哈希兜底；PID 复用/签名变化自动重算
-    public string IdentityKeyFor(ProcessEntry e)
+    private string IdentityKeyFor(int pid, string? path, SignatureState sig, string? subject, string? productName, string name)
     {
-        if (e.Pid == 0) return "sys:idle";
-        if (e.Pid == 4) return "sys:kernel";
+        if (pid == 0) return "sys:idle";
+        if (pid == 4) return "sys:kernel";
 
-        string sig = $"{e.Signature}|{e.SignatureSubject}|{e.ProductName}|{e.Path}";
-        if (_identityCache.TryGetValue(e.Pid, out var cached) && cached.Sig == sig)
+        string sigKey = $"{sig}|{subject}|{productName}|{path}";
+        if (_identityCache.TryGetValue(pid, out var cached) && cached.Sig == sigKey)
             return cached.Key;
 
         string key;
-        if (!string.IsNullOrEmpty(e.Path))
+        if (!string.IsNullOrEmpty(path))
         {
-            if (e.Signature is SignatureState.Valid or SignatureState.Untrusted or SignatureState.Invalid
-                && !string.IsNullOrEmpty(e.SignatureSubject))
+            if (sig is SignatureState.Valid or SignatureState.Untrusted or SignatureState.Invalid
+                && !string.IsNullOrEmpty(subject))
             {
-                var product = string.IsNullOrEmpty(e.ProductName) ? e.Name : e.ProductName!;
-                key = $"sig:{IdentityUtil.ShortHash(e.SignatureSubject + "|" + product)}";
+                var product = string.IsNullOrEmpty(productName) ? name : productName!;
+                key = $"sig:{IdentityUtil.ShortHash(subject + "|" + product)}";
             }
             else
             {
-                key = $"path:{IdentityUtil.ShortHash(e.Path.ToLowerInvariant())}";
+                key = $"path:{IdentityUtil.ShortHash(path.ToLowerInvariant())}";
             }
         }
         else
         {
-            key = $"unk:{e.Pid}";
+            key = $"unk:{pid}";
         }
 
-        _identityCache[e.Pid] = (sig, e.Path ?? "", key);
+        _identityCache[pid] = (sigKey, path ?? "", key);
         return key;
     }
 

@@ -15,6 +15,11 @@ public sealed class AppSettings
     /// 隐私模式：暂停基线学习（证据流照常）
     public bool BaselinePaused { get; set; }
 
+    /// 用户允许名单（SoftwareIdentity 键）。处置层：用户的信任决定优先于引擎判定。
+    public List<string> TrustedIdentityKeys { get; set; } = new();
+    /// 允许名单的展示名（键 → 名称）
+    public Dictionary<string, string> TrustedIdentityNames { get; set; } = new();
+
     public static string Dir { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NetWatch");
     public static string SettingsPath { get; } = Path.Combine(Dir, "settings.json");

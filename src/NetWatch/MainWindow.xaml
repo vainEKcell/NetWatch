@@ -211,6 +211,19 @@
                                     <Button Content="🚫 禁止联网" Command="{Binding BlockCommand}"
                                             Background="#3A1D1E" BorderBrush="#63272A"/>
                                     <Button Content="恢复联网" Command="{Binding UnblockCommand}" Margin="8,0,0,0"/>
+                                    <Button Command="{Binding ToggleTrustCommand}" Margin="8,0,0,0"
+                                            ToolTip="加入允许名单后，此软件身份的判定将显示为「正常」（你的信任决定优先于引擎），可随时撤销">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                <Setter Property="Content" Value="✓ 信任此软件"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedTrusted}" Value="True">
+                                                        <Setter Property="Content" Value="取消信任"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
                                     <Button Content="复制详情" Command="{Binding CopyCommand}" Margin="8,0,0,0"/>
                                     <Button Content="打开文件夹" Command="{Binding FolderCommand}" Margin="8,0,0,0"/>
                                 </StackPanel>
@@ -476,14 +489,19 @@
 
             <!-- ========== 6. 拦截名单 ========== -->
             <TabItem Header="拦截名单">
-                <DockPanel>
-                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="解除所选程序的拦截" Command="{Binding UnblockAppCommand}"/>
                         <Button Content="刷新" Command="{Binding RefreshBlockedCommand}" Margin="8,0,0,0"/>
                         <TextBlock Text="拦截 = Windows 防火墙规则（出站 + 入站），移除后立即恢复联网"
                                    Foreground="{StaticResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
                     </StackPanel>
-                    <DataGrid ItemsSource="{Binding BlockedApps}" CanUserSortColumns="False"
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding BlockedApps}" CanUserSortColumns="False"
                               SelectedItem="{Binding SelectedBlocked}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="程序" Binding="{Binding DisplayName}" Width="240"/>
@@ -491,7 +509,18 @@
                             <DataGridTextColumn Header="规则" Binding="{Binding RulesText}" Width="90"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                </DockPanel>
+                    <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,8,0,0">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="允许名单（你信任的软件身份，判定将显示为「正常」）"
+                                           Foreground="{StaticResource DimBrush}" VerticalAlignment="Center"/>
+                                <Button Content="移除所选" Command="{Binding RemoveTrustedCommand}" Margin="14,0,0,0"/>
+                            </StackPanel>
+                            <ListBox ItemsSource="{Binding TrustedApps}" SelectedItem="{Binding SelectedTrustedApp}"
+                                     MaxHeight="140" BorderThickness="0" Background="Transparent"/>
+                        </DockPanel>
+                    </Border>
+                </Grid>
             </TabItem>
 
             <!-- ========== 7. 网络配置 ========== -->

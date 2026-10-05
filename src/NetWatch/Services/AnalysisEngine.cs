@@ -4,9 +4,10 @@ using NetWatch.Services;
 
 /// 分析引擎（P2）：规则只产出证据，聚合后定级。
 /// 原则：单因素最高 Attention；HighRisk 必须多项独立特征组合；证据不足输出 Unknown。
+/// 处置层（P5）：用户加入允许名单的软件身份，其信任决定优先于引擎判定。
 public static class AnalysisEngine
 {
-    public static Verdict Evaluate(ProcessEntry e, PidStats? s, TimeSpan sessionLen)
+    public static Verdict Evaluate(ProcessEntry e, PidStats? s, TimeSpan sessionLen, bool userTrusted = false)
     {
         var v = new Verdict();
 
@@ -97,7 +98,19 @@ public static class AnalysisEngine
             }
         }
 
-        // ---------- 3. 聚合定级 ----------
+        // ---------- 3. 处置层：用户信任优先 ----------
+        if (userTrusted)
+        {
+            v.Status = VerdictStatus.Normal;
+            v.Summary = "用户已信任（允许名单生效）——引擎特征仅作记录，不参与定级，可随时在「拦截名单」页撤销";
+            v.Evidence.Add(new EvidenceItem(
+                $"用户已将此软件加入允许名单（引擎原始特征 {v.Evidence.Count} 项仅作记录）",
+                "处置层的用户决定具有最高优先级",
+                null, 1));
+            return v;
+        }
+
+        // ---------- 4. 聚合定级 ----------
         int strong = v.Evidence.Count(x => x.Weight >= 3);
         int mid = v.Evidence.Count(x => x.Weight == 2);
         int total = v.Evidence.Sum(x => x.Weight);

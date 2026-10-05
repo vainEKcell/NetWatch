@@ -112,6 +112,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         ShowRelatedEventsCommand = new RelayCommand(ShowRelatedEventsForSelection);
         ClearEventsFilterCommand = new RelayCommand(ClearEventsFilter);
         QueryFileIntelCommand = new RelayCommand(() => _ = QuerySelectedFileIntelAsync());
+        InitTrustedList();
 
         Monitor.Start();
         RefreshBlocked();
@@ -456,6 +457,80 @@ public sealed class MainViewModel : VmBase, IDisposable
     public void SetEvidenceCap(int mb) { Settings.EvidenceMaxSizeMB = mb; Settings.Save(); Evidence.Cleanup(); }
     public void SetBaselinePaused(bool paused) { Settings.BaselinePaused = paused; Settings.Save(); UpdateStorageInfo(); }
 
+    // ================= P5 处置增强：允许名单 =================
+
+    public class TrustedAppVM
+    {
+        public required string Key { get; init; }
+        public required string DisplayName { get; init; }
+        public string Display => $"{DisplayName}   ·   {Key}";
+    }
+
+    public ObservableCollection<TrustedAppVM> TrustedApps { get; } = new();
+    public TrustedAppVM? SelectedTrustedApp { get; set; }
+    public bool SelectedTrusted { get; private set; }
+    public RelayCommand ToggleTrustCommand { get; private set; } = null!;
+    public RelayCommand RemoveTrustedCommand { get; private set; } = null!;
+
+    public bool IsIdentityTrusted(string? key) =>
+        !string.IsNullOrEmpty(key) && Settings.TrustedIdentityKeys.Contains(key);
+
+    private void InitTrustedList()
+    {
+        ToggleTrustCommand = new RelayCommand(ToggleTrustForSelection);
+        RemoveTrustedCommand = new RelayCommand(() =>
+        {
+            if (SelectedTrustedApp == null) return;
+            Settings.TrustedIdentityKeys.Remove(SelectedTrustedApp.Key);
+            Settings.TrustedIdentityNames.Remove(SelectedTrustedApp.Key);
+            Settings.Save();
+            AddSystemEvent($"已将 {SelectedTrustedApp.DisplayName} 移出允许名单");
+            RefreshTrustedApps();
+        });
+        RefreshTrustedApps();
+    }
+
+    private void RefreshTrustedApps()
+    {
+        TrustedApps.Clear();
+        foreach (var k in Settings.TrustedIdentityKeys)
+            TrustedApps.Add(new TrustedAppVM
+            {
+                Key = k,
+                DisplayName = Settings.TrustedIdentityNames.TryGetValue(k, out var n) ? n : k,
+            });
+    }
+
+    public void ToggleTrustForSelection()
+    {
+        var row = _selected;
+        if (row == null) return;
+        var key = Entities.GetProcess(row.Pid)?.IdentityKey;
+        if (string.IsNullOrEmpty(key) || key.StartsWith("unk:", StringComparison.Ordinal))
+        {
+            MessageBox.Show("该进程尚无稳定身份（路径未解析），无法加入允许名单。", "提示",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var name = Entities.GetIdentity(key)?.DisplayName ?? Tracker.Get(row.Pid).Name;
+        if (IsIdentityTrusted(key))
+        {
+            Settings.TrustedIdentityKeys.Remove(key);
+            Settings.TrustedIdentityNames.Remove(key);
+            Settings.Save();
+            AddSystemEvent($"已将 {name} 移出允许名单（恢复引擎判定）");
+        }
+        else
+        {
+            Settings.TrustedIdentityKeys.Add(key);
+            Settings.TrustedIdentityNames[key] = name;
+            Settings.Save();
+            AddSystemEvent($"已将 {name} 加入允许名单——判定将显示为正常，可随时撤销");
+        }
+        RefreshTrustedApps();
+        UpdateDetail();
+    }
+
     /// 进程名是异步解析的：占位名（PID xxx）出现后，回填最近事件/解析行的名字
     private void RefreshRecentNames()
     {
@@ -513,9 +588,6 @@ public sealed class MainViewModel : VmBase, IDisposable
                 }
             }
 
-            var verdict = AnalysisEngine.Evaluate(entry, stats, _session.Elapsed);
-            entry.FirewallBlocked = entry.Path != null && _blockedPaths.Contains(entry.Path);
-            _verdictsByPid[pid] = verdict;
             Entities.ApplyProcessEntry(entry);   // 实体库登记（身份/实例）
 
             // 跨会话“首见于”回填（每个身份只查一次库）
@@ -526,6 +598,11 @@ public sealed class MainViewModel : VmBase, IDisposable
                 var id = Entities.GetIdentity(identityKey);
                 if (id != null) _ = Task.Run(() => Baseline.BackfillIdentity(id));
             }
+
+            var verdict = AnalysisEngine.Evaluate(entry, stats, _session.Elapsed,
+                userTrusted: IsIdentityTrusted(identityKey));
+            entry.FirewallBlocked = entry.Path != null && _blockedPaths.Contains(entry.Path);
+            _verdictsByPid[pid] = verdict;
 
             if (!_rowsByPid.TryGetValue(pid, out var row))
             {
@@ -667,6 +744,9 @@ public sealed class MainViewModel : VmBase, IDisposable
         SelectedConns.Clear();
         if (_connsByPid.TryGetValue(row.Pid, out var conns))
             foreach (var c in conns) SelectedConns.Add(ConnRowVM.From(c, Dns));
+
+        SelectedTrusted = IsIdentityTrusted(inst?.IdentityKey);
+        Raise(nameof(SelectedTrusted));
 
         RaiseAll(nameof(DetailName), nameof(DetailCompany), nameof(DetailPid), nameof(DetailPath),
             nameof(DetailSignature), nameof(DetailSignatureBrush), nameof(DetailIcon),

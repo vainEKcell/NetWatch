@@ -117,6 +117,15 @@ public static class Win {
 
     Shot "p1-svchost2.png"
 
+    # P5 信任流程验证：点击「✓ 信任此软件」→ 判定应变为客户信任
+    $trustBtn = FindByName "✓ 信任此软件"
+    if ($trustBtn) {
+        ($trustBtn.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)).Invoke()
+        Log "trust invoked"
+        Start-Sleep -Milliseconds 2500
+        Shot "p5-trusted.png"
+    } else { Log "trust button not found (可能已处于信任态)" }
+
     Write-Output "done"
 }
 
