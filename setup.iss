@@ -5,7 +5,7 @@
 #define MyAppVersion "1.0.0"
 #endif
 
-#define MyAppName "流量哨兵 NetWatch"
+#define MyAppName "NetWatch"
 #define MyAppExeName "NetWatch.exe"
 
 [Setup]

@@ -229,7 +229,7 @@ public sealed class MainViewModel : VmBase, IDisposable
     public string TotalUpText { get; private set; } = "0 B/s";
     public string TotalDownText { get; private set; } = "0 B/s";
     public string SessionText { get; private set; } = "";
-    public string TrayText { get; private set; } = "流量哨兵";
+    public string TrayText { get; private set; } = "NetWatch";
     public string ConnCountText { get; private set; } = "";
     public string BlockedCountText { get; private set; } = "";
     public string BannerText { get; private set; } = "";

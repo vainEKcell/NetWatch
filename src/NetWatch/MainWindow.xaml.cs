@@ -29,7 +29,7 @@ public partial class MainWindow : Window
             _tray.IconSource = new BitmapImage(new Uri("pack://application:,,,/Assets/app.ico"));
         }
         catch { }
-        _tray.ToolTipText = "流量哨兵 NetWatch";
+        _tray.ToolTipText = "NetWatch";
         _tray.TrayLeftMouseUp += (_, _) => RestoreFromTray();
 
         var menu = new ContextMenu();

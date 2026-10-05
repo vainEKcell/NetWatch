@@ -31,11 +31,11 @@ git push -u origin main
    git push origin v1.0.0
    ```
 3. 在 GitHub 仓库页 → Releases → Draft a new release → 选择 tag v1.0.0 →
-   标题如「流量哨兵 NetWatch v1.0.0」→ 拖入 `dist\NetWatch-Setup-1.0.0.exe` → Publish。
+   标题如「NetWatch v1.0.0」→ 拖入 `dist\NetWatch-Setup-1.0.0.exe` → Publish。
 
 命令行方式（装了 GitHub CLI 的话）：
 ```powershell
-gh release create v1.0.0 "dist\NetWatch-Setup-1.0.0.exe" --title "流量哨兵 NetWatch v1.0.0" --notes "首个公开版本：每进程流量监控、DNS 劫持三层检测、证据链判定、行为基线。"
+gh release create v1.0.0 "dist\NetWatch-Setup-1.0.0.exe" --title "NetWatch v1.0.0" --notes "首个公开版本：每进程流量监控、DNS 劫持三层检测、证据链判定、行为基线。"
 ```
 
 ## 3. 日常迭代

@@ -13,7 +13,7 @@ public partial class App : Application
         _mutex = new Mutex(true, "NetWatch_SingleInstance", out var fresh);
         if (!fresh)
         {
-            MessageBox.Show("流量哨兵已在运行（可在系统托盘找到）。", "NetWatch",
+            MessageBox.Show("NetWatch 已在运行（可在系统托盘找到）。", "NetWatch",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown();
             return;

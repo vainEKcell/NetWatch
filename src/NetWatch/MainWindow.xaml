@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:NetWatch"
-        Title="流量哨兵 NetWatch — 本机网络分析台"
+        Title="NetWatch"
         Width="1400" Height="880" MinWidth="1150" MinHeight="680"
         Background="{StaticResource BgBrush}"
         FontFamily="Microsoft YaHei UI" FontSize="12.5"
@@ -42,7 +42,7 @@
             <DockPanel>
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
                     <Image Source="Assets/app.ico" Width="26" Height="26"/>
-                    <TextBlock Text="流量哨兵" FontSize="16" FontWeight="Bold" Margin="9,0,18,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="NetWatch" FontSize="16" FontWeight="Bold" Margin="9,0,18,0" VerticalAlignment="Center"/>
                     <Button Command="{Binding TogglePauseCommand}" VerticalAlignment="Center">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">

@@ -33,7 +33,7 @@ public sealed class FirewallService
         dynamic rule = Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FWRule")
             ?? throw new InvalidOperationException("找不到防火墙规则 COM 组件"));
         rule.Name = name;
-        rule.Description = "由流量哨兵 NetWatch 创建，可在本程序「拦截名单」或 Windows 防火墙中移除";
+        rule.Description = "由NetWatch 创建，可在本程序「拦截名单」或 Windows 防火墙中移除";
         rule.ApplicationName = path;
         rule.Action = 0;            // NET_FW_ACTION_BLOCK
         rule.Direction = direction; // 1 = 入站, 2 = 出站
