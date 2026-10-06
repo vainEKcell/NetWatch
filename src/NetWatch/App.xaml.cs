@@ -13,21 +13,23 @@ public partial class App : Application
         _mutex = new Mutex(true, "NetWatch_SingleInstance", out var fresh);
         if (!fresh)
         {
-            MessageBox.Show("NetWatch 已在运行（可在系统托盘找到）。", "NetWatch",
+            MessageBox.Show(L10n.T("msg.alreadyRunning"), "NetWatch",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown();
             return;
         }
 
+        // 语言在 MainWindow 加载前应用，避免闪烁
+        L10n.Apply(AppSettings.Load().Language);
+
         DispatcherUnhandledException += (_, args) =>
         {
             Log.Error("UI 未处理异常（含内层链）", Flatten(args.Exception));
             MessageBox.Show(
-                $"发生未处理异常：{args.Exception.Message}\n\n详情见日志：{Log.FilePath}",
+                L10n.T("msg.uiError", args.Exception.Message, Log.FilePath),
                 "NetWatch", MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
-
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
             Log.Error("AppDomain 未处理异常", Flatten(args.ExceptionObject as Exception));
         TaskScheduler.UnobservedTaskException += (_, args) =>

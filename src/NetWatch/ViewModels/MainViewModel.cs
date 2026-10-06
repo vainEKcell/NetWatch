@@ -75,6 +75,30 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     public event Action<double, double>? ChartPush;
 
+    // ---------- 本地化：DataGrid 列头绑定用索引器 ----------
+    public string this[string key] => L10n.T(key);
+
+    /// 语言切换后通知所有 [key] 绑定刷新，并重算非 tick 驱动的状态文本
+    public void OnLanguageChanged()
+    {
+        Raise("Item[]");
+        UpdateAuditStatus();
+        UpdateStorageInfo();
+    }
+
+    public string Language
+    {
+        get => Settings.Language;
+        set
+        {
+            if (Settings.Language == value) return;
+            Settings.Language = value;
+            Settings.Save();
+            L10n.Apply(value);
+            OnLanguageChanged();
+        }
+    }
+
     public MainViewModel()
     {
         Baseline = new BaselineStore(Settings);
@@ -118,12 +142,19 @@ public sealed class MainViewModel : VmBase, IDisposable
         ClearEventsFilterCommand = new RelayCommand(ClearEventsFilter);
         QueryFileIntelCommand = new RelayCommand(() => _ = QuerySelectedFileIntelAsync());
         InitTrustedList();
+        KillCommand = new RelayCommand(KillSelectedProcess);
+        TaskMgrCommand = new RelayCommand(OpenTaskManager);
+        CopyPidCommand = new RelayCommand(CopySelectedPid);
+        StopServicesCommand = new RelayCommand(StopSelectedServices);
+        DisableServicesCommand = new RelayCommand(DisableSelectedServices);
 
         Monitor.Start();
         RefreshBlocked();
         InitAudit();
         InitSysmon();
-        AddSystemEvent("监控已开始。说明：本工具只能看到「谁在连谁、传多少」，看不到加密内容；风险提示 ≠ 确诊病毒。");
+        DohStatusText = L10n.T("doh.idle");
+        Raise(nameof(DohStatusText));
+        AddSystemEvent(L10n.T("sys.started"));
     }
 
     // ================= 防火墙拦截审计（5157）与 Sysmon =================
@@ -150,29 +181,24 @@ public sealed class MainViewModel : VmBase, IDisposable
     private void UpdateAuditStatus()
     {
         var (s, f) = FirewallAuditWatcher.QueryAuditState();
-        AuditStatusText = (s || f)
-            ? "拦截审计：已启用（被防火墙拦截的连接实时显示于事件流）"
-            : "拦截审计：未启用";
-        SysmonStatusText = Sysmon.Available
-            ? "Sysmon：已检测到（运行用户富化生效）"
-            : "Sysmon：未安装（可选增强，不影响功能）";
+        AuditStatusText = (s || f) ? L10n.T("cfg.auditOn") : L10n.T("cfg.auditOff");
+        SysmonStatusText = Sysmon.Available ? L10n.T("cfg.sysmonOn") : L10n.T("cfg.sysmonOff");
         RaiseAll(nameof(AuditStatusText), nameof(SysmonStatusText));
     }
 
     public void EnableFirewallAudit()
     {
-        var r = MessageBox.Show(
-            "将在系统审核策略中启用「审核筛选平台连接」（auditpol 命令，完全可逆），\n用于实时显示被 Windows 防火墙拦截的连接。继续？",
-            "启用拦截审计", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        var r = MessageBox.Show(L10n.T("msg.confirmAudit"), "NetWatch",
+            MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (r != MessageBoxResult.Yes) return;
         if (FirewallAuditWatcher.EnableAudit())
         {
             Audit.Start(OnBlockedConnection);
             UpdateAuditStatus();
-            AddSystemEvent("防火墙拦截审计已启用——被拦截的连接将实时出现在事件流");
+            AddSystemEvent(L10n.T("sys.auditOn"));
         }
         else
-            MessageBox.Show("启用失败（需要管理员权限）。", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(L10n.T("msg.auditFail"), "NetWatch", MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     private void OnBlockedConnection(BlockedConnectionEvent b) => _blockedEvents.Enqueue(b);
@@ -194,6 +220,11 @@ public sealed class MainViewModel : VmBase, IDisposable
     public RelayCommand ShowRelatedEventsCommand { get; }
     public RelayCommand ClearEventsFilterCommand { get; }
     public RelayCommand QueryFileIntelCommand { get; }
+    public RelayCommand KillCommand { get; private set; } = null!;
+    public RelayCommand TaskMgrCommand { get; private set; } = null!;
+    public RelayCommand CopyPidCommand { get; private set; } = null!;
+    public RelayCommand StopServicesCommand { get; private set; } = null!;
+    public RelayCommand DisableServicesCommand { get; private set; } = null!;
 
     /// P2 调查联动：UI 订阅后切到事件流页
     public event Action? NavigateToEventsRequested;
@@ -202,7 +233,7 @@ public sealed class MainViewModel : VmBase, IDisposable
     {
         Paused = !Paused;
         Raise(nameof(Paused));
-        AddSystemEvent(Paused ? "监控已暂停（连接表仍刷新，流量不再累计）" : "监控已恢复");
+        AddSystemEvent(Paused ? L10n.T("sys.paused") : L10n.T("sys.resumed"));
     }
 
     public bool HideLoopback
@@ -324,7 +355,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"查询失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(L10n.T("msg.intelFail", ex.Message), "NetWatch", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -339,7 +370,7 @@ public sealed class MainViewModel : VmBase, IDisposable
     public string DohProbeDomains { get; set; } = string.Join(", ", DnsCheckService.DefaultProbes);
     public int DohProviderIndex { get; set; }
     public bool DohRunning { get; private set; }
-    public string DohStatusText { get; private set; } = "体检未运行。此功能为唯一的主动联网功能：点击后向所选公共 DoH 发起少量查询做交叉比对。";
+    public string DohStatusText { get; private set; } = "";
 
     // ================= tick =================
 
@@ -425,7 +456,7 @@ public sealed class MainViewModel : VmBase, IDisposable
                     IdentityKey = Entities.GetProcess(b.Pid)?.IdentityKey,
                     RemoteIp = b.RemoteIp,
                     RemotePort = b.RemotePort,
-                    Text = $"防火墙拦截：{b.AppPath ?? bname} → {b.RemoteIp}:{b.RemotePort} ({b.Protocol})",
+                    Text = $"{L10n.T("kind.fwBlock")}: {b.AppPath ?? bname} → {Util.FormatEndpoint(b.RemoteIp, b.RemotePort)} ({b.Protocol})",
                     Level = RiskLevel.Medium,
                 });
             }
@@ -520,7 +551,7 @@ public sealed class MainViewModel : VmBase, IDisposable
             Evidence.Cleanup();
             UpdateStorageInfo();
             if (manual)
-                MessageBox.Show($"清理完成：基线删除 {removed} 行。\n证据流保留 {Settings.EvidenceRetentionDays} 天 / 容量上限 {Settings.EvidenceMaxSizeMB} MB。",
+                MessageBox.Show(L10n.T("msg.cleanupDone", removed, Settings.EvidenceRetentionDays, Settings.EvidenceMaxSizeMB),
                     "NetWatch", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex) { Log.Error("保留策略清理失败", ex); }
@@ -590,7 +621,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         var key = Entities.GetProcess(row.Pid)?.IdentityKey;
         if (string.IsNullOrEmpty(key) || key.StartsWith("unk:", StringComparison.Ordinal))
         {
-            MessageBox.Show("该进程尚无稳定身份（路径未解析），无法加入允许名单。", "提示",
+            MessageBox.Show(L10n.T("msg.noIdentity"), "NetWatch",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
@@ -600,17 +631,116 @@ public sealed class MainViewModel : VmBase, IDisposable
             Settings.TrustedIdentityKeys.Remove(key);
             Settings.TrustedIdentityNames.Remove(key);
             Settings.Save();
-            AddSystemEvent($"已将 {name} 移出允许名单（恢复引擎判定）");
+            AddSystemEvent(L10n.T("sys.untrusted", name));
         }
         else
         {
             Settings.TrustedIdentityKeys.Add(key);
             Settings.TrustedIdentityNames[key] = name;
             Settings.Save();
-            AddSystemEvent($"已将 {name} 加入允许名单——判定将显示为正常，可随时撤销");
+            AddSystemEvent(L10n.T("sys.trusted", name));
         }
         RefreshTrustedApps();
         UpdateDetail();
+    }
+
+    // ================= 进程处置：结束进程 / 任务管理器 / 服务 =================
+
+    public void KillSelectedProcess()
+    {
+        var row = _selected;
+        if (row == null) return;
+        var entry = Tracker.Get(row.Pid);
+        if (MessageBox.Show(L10n.T("msg.confirmKill", entry.Name, entry.Pid), "NetWatch",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
+            return;
+        try
+        {
+            using var p = Process.GetProcessById(row.Pid);
+            p.Kill();
+            p.WaitForExit(3000);
+            AddSystemEvent(L10n.T("sys.processKilled", entry.Name, entry.Pid));
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(L10n.T("msg.killFail", ex.Message), "NetWatch",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    public void OpenTaskManager()
+    {
+        try { Process.Start(new ProcessStartInfo("taskmgr.exe") { UseShellExecute = true }); }
+        catch (Exception ex) { MessageBox.Show(ex.Message, "NetWatch", MessageBoxButton.OK, MessageBoxImage.Error); }
+    }
+
+    public void CopySelectedPid()
+    {
+        if (_selected == null) return;
+        try { Clipboard.SetText(_selected.Pid.ToString()); } catch { }
+    }
+
+    public void StopSelectedServices()
+    {
+        var row = _selected;
+        if (row == null) return;
+        var svcs = Entities.ServicesOf(row.Pid);
+        if (svcs.Count == 0)
+        {
+            MessageBox.Show(L10n.T("msg.noServices"), "NetWatch", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var list = string.Join("\n", svcs.Select(s => $"{s.Name} ({s.DisplayName})"));
+        if (MessageBox.Show(L10n.T("msg.confirmStopServices", list), "NetWatch",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
+            return;
+        var stopped = new List<string>();
+        foreach (var s in svcs)
+        {
+            var (ok, _) = RunSc($"stop \"{s.Name}\"");
+            if (ok) stopped.Add(s.Name);
+            AddSystemEvent(L10n.T("sys.serviceStopped", s.Name));
+        }
+        if (stopped.Count > 0)
+            MessageBox.Show(L10n.T("sys.serviceStopped", string.Join(", ", stopped)), "NetWatch",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    public void DisableSelectedServices()
+    {
+        var row = _selected;
+        if (row == null) return;
+        var svcs = Entities.ServicesOf(row.Pid);
+        if (svcs.Count == 0)
+        {
+            MessageBox.Show(L10n.T("msg.noServices"), "NetWatch", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var list = string.Join("\n", svcs.Select(s => $"{s.Name} ({s.DisplayName})"));
+        if (MessageBox.Show(L10n.T("msg.confirmDisableServices", list), "NetWatch",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
+            return;
+        foreach (var s in svcs)
+        {
+            RunSc($"config \"{s.Name}\" start= disabled");
+            AddSystemEvent(L10n.T("sys.serviceDisabled", s.Name));
+        }
+    }
+
+    private static (bool Ok, string Output) RunSc(string args)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("sc.exe", args)
+            {
+                UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true,
+            };
+            using var p = Process.Start(psi)!;
+            var output = p.StandardOutput.ReadToEnd();
+            p.WaitForExit(10000);
+            return (p.ExitCode == 0, output);
+        }
+        catch (Exception ex) { Log.Error("sc.exe 执行失败", ex); return (false, ""); }
     }
 
     /// 进程名是异步解析的：占位名（PID xxx）出现后，回填最近事件/解析行的名字
@@ -760,50 +890,50 @@ public sealed class MainViewModel : VmBase, IDisposable
         var entry = Tracker.Get(row.Pid);
         DetailName = entry.Name;
         DetailCompany = entry.Description ?? entry.Company ?? "";
-        DetailPid = $"PID {entry.Pid} · {(entry.Exited ? "已退出" : "运行中")}" +
-                    (entry.StartTimeUtc != null ? $" · 启动于 {entry.StartTimeUtc.Value.ToLocalTime():MM-dd HH:mm:ss}" : "");
-        DetailPath = entry.Path ?? "（无法读取路径：受保护进程或权限不足）";
+        DetailPid = $"PID {entry.Pid} · {(entry.Exited ? L10n.T("common.exitedShort") : L10n.T("common.running"))}" +
+                    (entry.StartTimeUtc != null ? $" · {L10n.T("common.started", entry.StartTimeUtc.Value.ToLocalTime().ToString("MM-dd HH:mm:ss"))}" : "");
+        DetailPath = entry.Path ?? L10n.T("d.pathUnavailable");
         DetailIcon = entry.Icon;
 
         // P1 关联信息：父进程 / 命令行 / 所属服务 / 软件身份
         var inst = Entities.GetProcess(entry.Pid);
         DetailParent = inst?.ParentPid is { } pp
             ? $"PID {pp}" + (Entities.GetProcess(pp)?.Name is { } pn ? $" · {pn}" : "")
-            : "未知（内核 rundown 未覆盖该进程时不可得）";
-        DetailCmdLine = inst?.CommandLine ?? "（未采集到）";
+            : L10n.T("d.parentUnknown");
+        DetailCmdLine = inst?.CommandLine ?? L10n.T("d.cmdNone");
         DetailUser = _userByPid.TryGetValue(entry.Pid, out var u) ? u
-            : (Sysmon.Available ? "（暂无 Sysmon 网络事件记录）" : "（需安装 Sysmon 后可用）");
+            : (Sysmon.Available ? L10n.T("d.userNoRecord") : L10n.T("d.userNeedSysmon"));
         var svcs = Entities.ServicesOf(entry.Pid);
         DetailServices = svcs.Count == 0
-            ? "（非服务宿主，或服务枚举尚未完成）"
+            ? L10n.T("d.noServices")
             : string.Join("、", svcs.Select(s => s.DisplayName == s.Name ? s.Name : $"{s.Name} ({s.DisplayName})"));
         var id = Entities.GetIdentity(inst?.IdentityKey);
         DetailIdentity = id == null
-            ? "未知"
-            : $"{id.Kind switch { IdentityKind.Signed => "签名身份", IdentityKind.PathOnly => "路径身份", IdentityKind.SystemReserved => "系统保留", IdentityKind.Packaged => "打包应用", _ => "未知" }} · {id.DisplayName}" +
+            ? L10n.T("common.unknown")
+            : $"{L10n.T(id.Kind switch { IdentityKind.Signed => "id.signed", IdentityKind.PathOnly => "id.pathOnly", IdentityKind.SystemReserved => "id.sysReserved", IdentityKind.Packaged => "id.packaged", _ => "common.unknown" })} · {id.DisplayName}" +
               (id.Kind == IdentityKind.Signed && id.CertSubject != null ? $" · {id.CertSubject}" : "") +
-              (id.Kind != IdentityKind.SystemReserved ? $" · 首见于 {id.FirstSeenUtc.ToLocalTime():MM-dd HH:mm}" : "");
+              (id.Kind != IdentityKind.SystemReserved ? $" · {L10n.T("common.firstSeen", id.FirstSeenUtc.ToLocalTime().ToString("MM-dd HH:mm"))}" : "");
 
         (DetailSignature, DetailSignatureBrush) = entry.Signature switch
         {
-            SignatureState.Valid => (entry.SignatureSubject == null ? "签名有效" : $"签名有效 · {entry.SignatureSubject}", UiBrushes.Green),
-            SignatureState.Unsigned => ("未签名", UiBrushes.Amber),
-            SignatureState.Untrusted => ($"签名不受信任{(entry.SignatureSubject == null ? "" : $" · {entry.SignatureSubject}")}（自签名/未知发布者）", UiBrushes.Amber),
-            SignatureState.Invalid => ("签名无效——文件可能在签名后被篡改", UiBrushes.Red),
-            _ => ("未检测（分析中或路径未知）", UiBrushes.Dim),
+            SignatureState.Valid => (entry.SignatureSubject == null ? L10n.T("sig.valid") : $"{L10n.T("sig.valid")} · {entry.SignatureSubject}", UiBrushes.Green),
+            SignatureState.Unsigned => (L10n.T("sig.unsigned"), UiBrushes.Amber),
+            SignatureState.Untrusted => ($"{L10n.T("sig.untrusted")}{(entry.SignatureSubject == null ? "" : $" · {entry.SignatureSubject}")} {L10n.T("sig.untrustedSuffix")}", UiBrushes.Amber),
+            SignatureState.Invalid => (L10n.T("sig.invalid"), UiBrushes.Red),
+            _ => (L10n.T("sig.unknown"), UiBrushes.Dim),
         };
 
         DetailRisks.Clear();
         var verdict = _verdictsByPid.TryGetValue(row.Pid, out var vv) ? vv : null;
         if (verdict == null)
         {
-            DetailVerdict = "分析中…";
+            DetailVerdict = L10n.T("d.analyzing");
             DetailVerdictBrush = UiBrushes.Dim;
-            DetailRisks.Add("（分析尚未完成）");
+            DetailRisks.Add(L10n.T("d.analyzing"));
         }
         else
         {
-            DetailVerdict = $"[{verdict.Status switch { VerdictStatus.HighRisk => "高风险", VerdictStatus.Attention => "值得关注", VerdictStatus.Unknown => "未知", _ => "正常" }}] {verdict.Summary}";
+            DetailVerdict = $"[{L10n.T(verdict.Status switch { VerdictStatus.HighRisk => "verdict.highrisk", VerdictStatus.Attention => "verdict.attention", VerdictStatus.Unknown => "verdict.unknown", _ => "verdict.normal" })}] {verdict.Summary}";
             DetailVerdictBrush = verdict.Status switch
             {
                 VerdictStatus.HighRisk => UiBrushes.Red,
@@ -888,10 +1018,11 @@ public sealed class MainViewModel : VmBase, IDisposable
     private void UpdateConfigCards()
     {
         var snap = Config.Snapshot;
-        DnsServersText = snap.AllDns.Length == 0 ? "（未配置）" : string.Join("　", snap.AllDns);
+        DnsServersText = snap.AllDns.Length == 0 ? L10n.T("cfg.none") : string.Join("　", snap.AllDns);
         ProxyText = snap.ProxyText;
         WinHttpText = snap.WinHttpText;
-        HostsText = $"{snap.Hosts.Count} 条生效映射 · 修改于 {(snap.HostsModified == default ? "未知" : snap.HostsModified.ToString("MM-dd HH:mm"))}";
+        HostsText = L10n.T("cfg.entries", snap.Hosts.Count,
+            snap.HostsModified == default ? "—" : snap.HostsModified.ToString("MM-dd HH:mm"));
 
         CollSync.Sync(Adapters, _adapterMap,
             snap.Adapters.Select(a => a.Name),
@@ -906,7 +1037,7 @@ public sealed class MainViewModel : VmBase, IDisposable
                 }
             });
 
-        DnsAlertCountText = $"DNS/配置告警 {Dns.AlertCount + _seriousConfigCount} 条";
+        DnsAlertCountText = L10n.T("st.dnsAlerts", Dns.AlertCount + _seriousConfigCount);
         RaiseAll(nameof(DnsServersText), nameof(ProxyText), nameof(WinHttpText), nameof(HostsText), nameof(DnsAlertCountText));
     }
 
@@ -923,8 +1054,8 @@ public sealed class MainViewModel : VmBase, IDisposable
         TotalDownText = Util.FormatSpeed(downNow);
         SessionText = $"↑ {Util.FormatBytes(upAll)}　↓ {Util.FormatBytes(downAll)}";
         TrayText = $"↑ {Util.FormatSpeed(upNow)}   ↓ {Util.FormatSpeed(downNow)}";
-        ConnCountText = $"当前连接 {_latestConns.Count(c => HideLoopback || !c.IsLoopback)}";
-        BlockedCountText = $"已拦截 {_blockedPaths.Count} 个程序";
+        ConnCountText = L10n.T("st.connCount", _latestConns.Count(c => HideLoopback || !c.IsLoopback));
+        BlockedCountText = L10n.T("st.blockedCount", _blockedPaths.Count);
 
         var flagged = 0;
         foreach (var r in Rows) if (r.RiskByte >= 2) flagged++;
@@ -932,8 +1063,8 @@ public sealed class MainViewModel : VmBase, IDisposable
         if (flagged > 0 || alerts > 0)
         {
             var parts = new List<string>();
-            if (flagged > 0) parts.Add($"{flagged} 个进程存在值得关注的行为（详见总览标色与详情面板，提示 ≠ 确诊）");
-            if (alerts > 0) parts.Add($"{alerts} 条 DNS/配置提示（见 DNS 安全页与事件流）");
+            if (flagged > 0) parts.Add(L10n.T("banner.flagged", flagged));
+            if (alerts > 0) parts.Add(L10n.T("banner.dns", alerts));
             BannerText = "⚠ " + string.Join("；", parts);
             BannerVisible = true;
         }
@@ -948,17 +1079,17 @@ public sealed class MainViewModel : VmBase, IDisposable
     {
         if (Monitor.LastError != null)
         {
-            StatusText = $"⚠ 实时监控异常：{Monitor.LastError}（连接表/DNS 配置监控仍可用）";
+            StatusText = L10n.T("st.error", Monitor.LastError);
             StatusBrush = UiBrushes.Red;
         }
         else if (Monitor.Running)
         {
-            StatusText = Paused ? "⏸ 已暂停（流量不累计）" : $"● 实时监控中 · 事件 {Agg.EventCount:N0}";
+            StatusText = Paused ? L10n.T("st.paused") : L10n.T("st.running", Agg.EventCount);
             StatusBrush = Paused ? UiBrushes.Amber : UiBrushes.Green;
         }
         else
         {
-            StatusText = "监控启动中…（需要管理员权限）";
+            StatusText = L10n.T("st.starting");
             StatusBrush = UiBrushes.Amber;
         }
         RaiseAll(nameof(StatusText), nameof(StatusBrush));
@@ -974,7 +1105,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         var path = entry.Path;
         if (string.IsNullOrEmpty(path))
         {
-            MessageBox.Show("尚未获取到该进程的程序路径（可能还在解析，或进程受系统保护）。", "无法拦截",
+            MessageBox.Show(L10n.T("msg.noPath"), "NetWatch",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -982,9 +1113,9 @@ public sealed class MainViewModel : VmBase, IDisposable
         var name = Path.GetFileName(path);
         bool sharedHost = string.Equals(path, Path.Combine(Environment.SystemDirectory, "svchost.exe"), StringComparison.OrdinalIgnoreCase);
         string msg = sharedHost
-            ? $"⚠ {name} 是共享服务宿主（svchost.exe），拦截会连同影响它承载的全部系统服务（更新、DNS 客户端等），可能导致系统异常。\n\n仍要拦截吗？"
-            : $"将创建 Windows 防火墙规则，禁止 {name} 的所有联网（出站 + 入站）。\n\n程序：{path}\n\n可随时在「拦截名单」页恢复。确定拦截？";
-        if (MessageBox.Show(msg, "确认拦截", MessageBoxButton.YesNo,
+            ? L10n.T("msg.confirmBlockShared", name)
+            : L10n.T("msg.confirmBlock", name, path);
+        if (MessageBox.Show(msg, "NetWatch", MessageBoxButton.YesNo,
                 sharedHost ? MessageBoxImage.Warning : MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes)
             return;
 
@@ -992,11 +1123,11 @@ public sealed class MainViewModel : VmBase, IDisposable
         {
             Firewall.BlockApp(path!, name);
             RefreshBlocked();
-            AddSystemEvent($"已禁止 {name} 联网（防火墙规则已创建）");
+            AddSystemEvent(L10n.T("sys.blockedApp", name));
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"拦截失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(L10n.T("msg.blockFail", ex.Message), "NetWatch", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -1008,16 +1139,16 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     public void UnblockAppByPath(string? path)
     {
-        if (string.IsNullOrEmpty(path)) { MessageBox.Show("无法读取该程序的路径。", "提示"); return; }
+        if (string.IsNullOrEmpty(path)) { MessageBox.Show(L10n.T("msg.noPathShort"), "NetWatch"); return; }
         try
         {
             Firewall.UnblockApp(path);
             RefreshBlocked();
-            AddSystemEvent($"已恢复 {Path.GetFileName(path)} 的联网");
+            AddSystemEvent(L10n.T("sys.unblockedApp", Path.GetFileName(path)));
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"恢复失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(L10n.T("msg.unblockFail", ex.Message), "NetWatch", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -1036,7 +1167,7 @@ public sealed class MainViewModel : VmBase, IDisposable
                 {
                     DisplayName = g.Key.Length > 0 ? Path.GetFileName(g.Key) : "(未知路径)",
                     Path = g.Key,
-                    RulesText = $"{g.Count()} 条规则",
+                    RulesText = L10n.T("rules.count", g.Count()),
                 });
             }
         }
@@ -1048,16 +1179,17 @@ public sealed class MainViewModel : VmBase, IDisposable
         var row = _selected;
         if (row == null) return;
         var entry = Tracker.Get(row.Pid);
+        var verdict = _verdictsByPid.TryGetValue(row.Pid, out var vv) ? vv : null;
         var sb = new StringBuilder();
-        sb.AppendLine($"进程：{entry.Name} (PID {entry.Pid})");
-        sb.AppendLine($"厂商：{entry.Company ?? "未知"}　描述：{entry.Description ?? "未知"}");
-        sb.AppendLine($"路径：{entry.Path ?? "未知"}");
-        sb.AppendLine($"签名：{DetailSignature}");
-        sb.AppendLine($"风险提示：{(entry.RiskReasons.Count == 0 ? "无" : string.Join("；", entry.RiskReasons))}");
-        sb.AppendLine($"上传累计：{Util.FormatBytes(row.UpTotalBytes)}　下载累计：{Util.FormatBytes(row.DownTotalBytes)}");
+        sb.AppendLine($"{L10n.T("cd.process")}: {entry.Name} (PID {entry.Pid})");
+        sb.AppendLine($"{L10n.T("cd.vendor")}: {entry.Company ?? L10n.T("common.unknown")}   {L10n.T("cd.desc")}: {entry.Description ?? L10n.T("common.unknown")}");
+        sb.AppendLine($"{L10n.T("cd.path")}: {entry.Path ?? L10n.T("common.unknown")}");
+        sb.AppendLine($"{L10n.T("cd.signature")}: {DetailSignature}");
+        sb.AppendLine($"{L10n.T("cd.risk")}: {(verdict == null ? L10n.T("d.analyzing") : verdict.Summary)}");
+        sb.AppendLine($"{L10n.T("cd.up")}: {Util.FormatBytes(row.UpTotalBytes)}   {L10n.T("cd.down")}: {Util.FormatBytes(row.DownTotalBytes)}");
         if (_connsByPid.TryGetValue(row.Pid, out var conns))
         {
-            sb.AppendLine("当前连接：");
+            sb.AppendLine(L10n.T("cd.conns") + ":");
             foreach (var c in conns)
                 sb.AppendLine($"  [{c.Proto}] {c.Local} → {c.Remote}（{c.State}，{Util.ScopeText(c.IsLoopback, c.IsLan)}）");
         }
@@ -1069,7 +1201,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         var path = _selected == null ? null : Tracker.Get(_selected.Pid).Path;
         if (string.IsNullOrEmpty(path))
         {
-            MessageBox.Show("无法读取程序路径。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L10n.T("msg.noPathShort"), "NetWatch", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         try { Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"")); } catch { }
@@ -1090,11 +1222,11 @@ public sealed class MainViewModel : VmBase, IDisposable
             w.WriteLine("时间,事件,进程,目标,数据量");
             foreach (var e in Events.ToList())
                 w.WriteLine($"\"{e.RawTime:yyyy-MM-dd HH:mm:ss}\",\"{e.RawKind}\",\"{e.Process}\",\"{e.Detail.Replace("\"", "\"\"")}\",\"{e.RawBytes}\"");
-            AddSystemEvent($"事件流已导出：{dlg.FileName}");
+            AddSystemEvent(L10n.T("sys.exported", dlg.FileName));
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"导出失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(L10n.T("msg.exportFail", ex.Message), "NetWatch", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -1118,7 +1250,7 @@ public sealed class MainViewModel : VmBase, IDisposable
 
         var url = DnsCheckService.Endpoints[Math.Clamp(DohProviderIndex, 0, DnsCheckService.Endpoints.Length - 1)].Url;
         DohRunning = true;
-        DohStatusText = "体检中…";
+        DohStatusText = L10n.T("doh.running");
         RaiseAll(nameof(DohRunning), nameof(DohStatusText));
         try
         {
@@ -1126,11 +1258,11 @@ public sealed class MainViewModel : VmBase, IDisposable
             var results = await DnsCheck.RunAsync(domains, url, progress);
             DohResults.Clear();
             foreach (var r in results) DohResults.Add(new DohResultVM(r));
-            DohStatusText = "体检完成。注意：结论为提示性——公共域名的 CDN 调度可能合法造成“不一致”，请换参考源复核后再下结论。";
+            DohStatusText = L10n.T("doh.done");
         }
         catch (Exception ex)
         {
-            DohStatusText = $"体检失败：{ex.Message}";
+            DohStatusText = L10n.T("msg.exportFail", ex.Message);
         }
         finally
         {

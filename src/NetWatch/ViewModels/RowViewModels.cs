@@ -140,12 +140,12 @@ public sealed class EventRowVM : VmBase
         switch (e.Kind)
         {
             case EventKind.NewConn:
-                vm.KindText = "新连接"; vm.KindBrush = UiBrushes.Green; vm.RawKind = "新连接"; break;
+                vm.KindText = L10n.T("kind.newConn"); vm.KindBrush = UiBrushes.Green; vm.RawKind = "newConn"; break;
             case EventKind.Closed:
-                vm.KindText = "断开"; vm.KindBrush = UiBrushes.Dim; vm.RawKind = "断开"; break;
+                vm.KindText = L10n.T("kind.closed"); vm.KindBrush = UiBrushes.Dim; vm.RawKind = "closed"; break;
             default:
-                if (e.IsSend) { vm.KindText = "大额上传"; vm.KindBrush = UiBrushes.Amber; vm.RawKind = "大额上传"; }
-                else { vm.KindText = "大额下载"; vm.KindBrush = UiBrushes.Blue; vm.RawKind = "大额下载"; }
+                if (e.IsSend) { vm.KindText = L10n.T("kind.largeUp"); vm.KindBrush = UiBrushes.Amber; vm.RawKind = "largeUp"; }
+                else { vm.KindText = L10n.T("kind.largeDown"); vm.KindBrush = UiBrushes.Blue; vm.RawKind = "largeDown"; }
                 vm.BytesText = Util.FormatBytes(e.Bytes);
                 break;
         }
@@ -160,9 +160,9 @@ public sealed class EventRowVM : VmBase
             Pid = b.Pid,
             RawTime = b.TimeUtc.ToLocalTime(),
             TimeText = b.TimeUtc.ToLocalTime().ToString("HH:mm:ss"),
-            KindText = "防火墙拦截",
+            KindText = L10n.T("kind.fwBlock"),
             KindBrush = UiBrushes.Red,
-            RawKind = "防火墙拦截",
+            RawKind = "fwBlock",
             Process = procName,
             Detail = $"{Util.FormatEndpoint(b.RemoteIp, b.RemotePort)} ({b.Protocol})" +
                      (string.IsNullOrEmpty(b.AppPath) ? "" : $"  ·  {b.AppPath}"),
@@ -178,7 +178,7 @@ public sealed class EventRowVM : VmBase
             Pid = -1,
             RawTime = DateTime.Now,
             TimeText = DateTime.Now.ToString("HH:mm:ss"),
-            KindText = "系统", KindBrush = UiBrushes.Dim, RawKind = "系统",
+            KindText = L10n.T("kind.system"), KindBrush = UiBrushes.Dim, RawKind = "system",
             Detail = text,
         };
         vm.RaiseAll(nameof(TimeText), nameof(KindText), nameof(KindBrush), nameof(Process), nameof(Detail));
@@ -192,9 +192,9 @@ public sealed class EventRowVM : VmBase
             Pid = -1,
             RawTime = time.ToLocalTime(),
             TimeText = time.ToLocalTime().ToString("HH:mm:ss"),
-            KindText = "DNS/配置告警",
+            KindText = L10n.T("kind.alert"),
             KindBrush = level == RiskLevel.High ? UiBrushes.Red : level == RiskLevel.Medium ? UiBrushes.Amber : UiBrushes.Dim,
-            RawKind = "DNS/配置告警",
+            RawKind = "alert",
             Detail = text,
         };
         vm.RaiseAll(nameof(TimeText), nameof(KindText), nameof(KindBrush), nameof(Detail));
@@ -303,7 +303,7 @@ public sealed class PortRowVM : VmBase
         var (addr, port) = Util.SplitEndpoint(c.Local);
         Port = port;
         Bind = c.Local;
-        BindText = addr is "0.0.0.0" or "::" ? "⚠ 对局域网开放" : addr is "127.0.0.1" or "::1" ? "仅本机" : "特定地址";
+        BindText = addr is "0.0.0.0" or "::" ? L10n.T("bind.lan") : addr is "127.0.0.1" or "::1" ? L10n.T("bind.local") : L10n.T("bind.specific");
         Pid = c.Pid;
         Process = procName;
         RaiseAll(nameof(ProtoText), nameof(Port), nameof(Bind), nameof(BindText), nameof(Pid), nameof(Process));
@@ -359,7 +359,7 @@ public sealed class AdapterRowVM : VmBase
     public void Update(AdapterInfo a)
     {
         Name = a.Name;
-        Status = a.Status;
+        Status = a.Status == "已连接" ? L10n.T("adapter.up") : L10n.T("adapter.down");
         IpsText = a.Ips.Length == 0 ? "—" : string.Join(", ", a.Ips);
         GwText = a.Gateways.Length == 0 ? "—" : string.Join(", ", a.Gateways);
         DnsText = a.Dns.Length == 0 ? "—" : string.Join(", ", a.Dns);

@@ -41,7 +41,7 @@ public sealed class DnsService
         _lastFlag[key] = DateTime.UtcNow;
 
         _alerts.Enqueue((e.TimeUtc, RiskLevel.Medium,
-            $"观察到：PID {e.Pid} 向当前系统未配置的 DNS 服务器 {e.RemoteIp}:53 发起查询。可能原因：软件内置解析器/DoH 工具（正常）；也可能为绕过系统配置的行为。请结合进程与签名判断"));
+            L10n.T("dnsalert.nonsystem", e.Pid, e.RemoteIp)));
     }
 
     /// DNS-Client 解析结果（ETW 线程调用）
@@ -64,7 +64,7 @@ public sealed class DnsService
         if (!Util.IsPublicDomain(d.Domain))
         {
             Flag(d, RiskLevel.Low,
-                $"域名 {d.Domain} 解析到内网/回环地址（本地域名，通常正常）", "loc:", quiet: true);
+                L10n.T("dnsalert.localDomain", d.Domain), "loc:", quiet: true);
             return;
         }
 
@@ -73,12 +73,12 @@ public sealed class DnsService
         {
             if (ip == "0.0.0.0")
             {
-                Flag(d, RiskLevel.Medium, $"观察到：公网域名 {d.Domain} 被解析到 0.0.0.0。可能原因：去广告工具的屏蔽策略（正常）；也可能为劫持屏蔽");
+                Flag(d, RiskLevel.Medium, L10n.T("dnsalert.zeroaddr", d.Domain));
                 break;
             }
             if (IpIs(ip, Util.IsLanIp) || IpIs(ip, Util.IsLoopbackIp))
             {
-                Flag(d, RiskLevel.High, $"观察到：公网域名 {d.Domain} 被解析到内网/回环地址 {ip}。依据：公网域名的权威解析不应为私有地址；误报可能：本地开发环境、AdGuard 类工具。建议用「DNS 体检」交叉验证");
+                Flag(d, RiskLevel.High, L10n.T("dnsalert.privateIp", d.Domain, ip));
                 break;
             }
         }
@@ -90,7 +90,7 @@ public sealed class DnsService
             lock (hist) snap = hist.Where(x => (d.TimeUtc - x.Utc).TotalSeconds <= 60).ToList();
             var distinct = snap.Select(x => x.Ip).Distinct().Count();
             if (distinct >= 6)
-                Flag(d, RiskLevel.Low, $"观察到：域名 {d.Domain} 60 秒内解析出 {distinct} 个不同地址。可能原因：CDN 调度（常态）；也可能为解析污染。低置信度，仅提示", "vol:");
+                Flag(d, RiskLevel.Low, L10n.T("dnsalert.volatility", d.Domain, distinct), "vol:");
         }
     }
 

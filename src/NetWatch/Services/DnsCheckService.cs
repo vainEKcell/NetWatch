@@ -12,11 +12,11 @@ public sealed record DohResult(string Domain, string LocalIps, string RefIps, st
 /// 这是本程序唯一的主动联网功能——仅在用户点击按钮时向所选公共 DoH 发起少量查询。
 public sealed class DnsCheckService
 {
-    public static readonly (string Name, string Url)[] Endpoints =
+    public static readonly (string NameKey, string Url)[] Endpoints =
     {
-        ("阿里公共 DNS (223.5.5.5)", "https://223.5.5.5/resolve"),
-        ("腾讯 DNSPod (doh.pub)", "https://doh.pub/resolve"),
-        ("Cloudflare (1.1.1.1)", "https://1.1.1.1/resolve"),
+        ("dns.ali", "https://223.5.5.5/resolve"),
+        ("dns.dnspod", "https://doh.pub/resolve"),
+        ("dns.cloudflare", "https://1.1.1.1/resolve"),
     };
 
     public static readonly string[] DefaultProbes = { "www.baidu.com", "www.qq.com", "www.microsoft.com" };
@@ -31,17 +31,17 @@ public sealed class DnsCheckService
         {
             var domain = raw.Trim();
             if (domain.Length == 0) continue;
-            progress?.Report($"正在体检 {domain} …");
+            progress?.Report(L10n.T("doh.checking", domain));
 
             string local;
             try
             {
                 var ips = await Dns.GetHostAddressesAsync(domain);
-                local = ips.Length == 0 ? "无记录" : string.Join(", ", ips.Select(a => a.ToString()).Distinct());
+                local = ips.Length == 0 ? L10n.T("doh.noRecord") : string.Join(", ", ips.Select(a => a.ToString()).Distinct());
             }
             catch
             {
-                local = "解析失败";
+                local = L10n.T("doh.localFail");
             }
 
             string reference;
@@ -51,7 +51,7 @@ public sealed class DnsCheckService
             }
             catch
             {
-                reference = "参考解析失败";
+                reference = L10n.T("doh.refFail");
             }
 
             var (verdict, level) = Judge(domain, local, reference);
@@ -62,23 +62,23 @@ public sealed class DnsCheckService
 
     private static (string, RiskLevel) Judge(string domain, string local, string reference)
     {
-        if (reference == "参考解析失败")
-            return ("无法完成比对（所选 DoH 不可达，检查网络或换一个参考源）", RiskLevel.Low);
+        if (reference == L10n.T("doh.refFail"))
+            return (L10n.T("doh.cannotCompare"), RiskLevel.Low);
 
-        if (local == "解析失败")
-            return ("⚠ 本机解析失败，但参考源有记录——解析环节可能被破坏", RiskLevel.Medium);
+        if (local == L10n.T("doh.localFail"))
+            return (L10n.T("doh.localFailAlert"), RiskLevel.Medium);
 
         bool publicDomain = Util.IsPublicDomain(domain);
         var localSet = SplitIps(local);
 
         if (publicDomain && localSet.Any(ip => Util.IsLanIp(ip) || Util.IsLoopbackIp(ip)))
-            return ("❌ 可疑：本机把该公网域名解析到内网/回环地址——疑似被劫持（本地开发环境除外）", RiskLevel.High);
+            return (L10n.T("doh.privateIp"), RiskLevel.High);
 
         var refSet = SplitIps(reference);
         if (refSet.Count > 0 && localSet.Overlaps(refSet))
-            return ("✅ 与参考解析一致", RiskLevel.None);
+            return (L10n.T("doh.ok"), RiskLevel.None);
 
-        return ("⚠ 与参考解析不一致——公共域名常见 CDN 调度差异，也可能是被劫持，建议换参考源复核", RiskLevel.Medium);
+        return (L10n.T("doh.mismatch"), RiskLevel.Medium);
     }
 
     private static HashSet<IPAddress> SplitIps(string s) =>
@@ -99,7 +99,7 @@ public sealed class DnsCheckService
         if (!doc.RootElement.TryGetProperty("Answer", out var answers) || answers.GetArrayLength() == 0)
         {
             int status = doc.RootElement.TryGetProperty("Status", out var st) ? st.GetInt32() : -1;
-            return status == 3 ? "NXDOMAIN（域名不存在）" : "无记录";
+            return status == 3 ? L10n.T("doh.nxdomain") : L10n.T("doh.noRecord");
         }
 
         var ips = new List<string>();
@@ -116,6 +116,6 @@ public sealed class DnsCheckService
             }
             catch { }
         }
-        return ips.Count == 0 ? "无记录" : string.Join(", ", ips.Distinct());
+        return ips.Count == 0 ? L10n.T("doh.noRecord") : string.Join(", ", ips.Distinct());
     }
 }

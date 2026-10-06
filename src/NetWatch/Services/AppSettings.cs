@@ -15,6 +15,9 @@ public sealed class AppSettings
     /// 隐私模式：暂停基线学习（证据流照常）
     public bool BaselinePaused { get; set; }
 
+    /// 界面语言：auto（跟随系统）/ zh / en
+    public string Language { get; set; } = "auto";
+
     /// 用户允许名单（SoftwareIdentity 键）。处置层：用户的信任决定优先于引擎判定。
     public List<string> TrustedIdentityKeys { get; set; } = new();
     /// 允许名单的展示名（键 → 名称）

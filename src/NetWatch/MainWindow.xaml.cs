@@ -106,6 +106,7 @@ public partial class MainWindow : Window
     {
         base.OnSourceInitialized(e);
         // 按已保存设置回填下拉框（XAML 解析期的默认选中已被 _vm==null 守卫忽略）
+        SetCombo(CbLanguage, _vm.Settings.Language);
         SetCombo(CbBaselineDays, _vm.Settings.BaselineRetentionDays);
         SetCombo(CbEvidenceDays, _vm.Settings.EvidenceRetentionDays);
         SetCombo(CbEvidenceCap, _vm.Settings.EvidenceMaxSizeMB);
@@ -116,6 +117,13 @@ public partial class MainWindow : Window
     {
         foreach (ComboBoxItem item in cb.Items)
             if (item.Tag is string s && int.TryParse(s, out var v) && v == tag)
+            { cb.SelectedItem = item; return; }
+    }
+
+    private static void SetCombo(System.Windows.Controls.ComboBox cb, string tag)
+    {
+        foreach (ComboBoxItem item in cb.Items)
+            if (item.Tag is string s && s == tag)
             { cb.SelectedItem = item; return; }
     }
 
@@ -149,4 +157,11 @@ public partial class MainWindow : Window
     private void OnCleanupNow(object sender, RoutedEventArgs e) => _vm.RunRetentionCleanup(manual: true);
 
     private void OnEnableAudit(object sender, RoutedEventArgs e) => _vm.EnableFirewallAudit();
+
+    private void OnLanguageChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm == null) return; // XAML 解析期默认选中会触发
+        if ((sender as ComboBox)?.SelectedItem is ComboBoxItem it && it.Tag is string s)
+            _vm.Language = s;
+    }
 }

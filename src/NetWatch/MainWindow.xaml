@@ -46,17 +46,17 @@
                     <Button Command="{Binding TogglePauseCommand}" VerticalAlignment="Center">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                                <Setter Property="Content" Value="⏸ 暂停监控"/>
+                                <Setter Property="Content" Value="{DynamicResource top.pause}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding Paused}" Value="True">
-                                        <Setter Property="Content" Value="▶ 恢复监控"/>
+                                        <Setter Property="Content" Value="{DynamicResource top.resume}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
                     </Button>
-                    <CheckBox Content="隐藏回环" IsChecked="{Binding HideLoopback}" Margin="14,0,0,0" VerticalAlignment="Center"/>
-                    <CheckBox Content="仅看可疑" IsChecked="{Binding OnlyFlagged}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    <CheckBox Content="{DynamicResource top.hideLoopback}" IsChecked="{Binding HideLoopback}" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                    <CheckBox Content="{DynamicResource top.onlyFlagged}" IsChecked="{Binding OnlyFlagged}" Margin="10,0,0,0" VerticalAlignment="Center"/>
                     <Border Background="{StaticResource InputBrush}" BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="1" CornerRadius="4" Margin="16,0,0,0" VerticalAlignment="Center">
                         <Grid>
@@ -67,7 +67,7 @@
                             <TextBox x:Name="SearchBox" BorderThickness="0" Background="Transparent"
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                      TextChanged="OnSearchChanged" Padding="7,4"/>
-                            <TextBlock x:Name="SearchHint" Text="搜索 进程 / 路径 / PID"
+                            <TextBlock x:Name="SearchHint" Text="{DynamicResource top.searchHint}"
                                        Foreground="{StaticResource DimBrush}" Margin="8,0,0,0"
                                        VerticalAlignment="Center" IsHitTestVisible="False"/>
                             <TextBlock Grid.Column="1" Text="🔍" Margin="0,0,8,0" VerticalAlignment="Center"
@@ -78,17 +78,17 @@
 
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                     <StackPanel Margin="0,0,20,0">
-                        <TextBlock Text="总上传" Foreground="{StaticResource DimBrush}" FontSize="10.5"/>
+                        <TextBlock Text="{DynamicResource top.totalUp}" Foreground="{StaticResource DimBrush}" FontSize="10.5"/>
                         <TextBlock Text="{Binding TotalUpText}" Foreground="{StaticResource GreenBrush}"
                                    FontSize="15" FontWeight="Bold"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,20,0">
-                        <TextBlock Text="总下载" Foreground="{StaticResource DimBrush}" FontSize="10.5"/>
+                        <TextBlock Text="{DynamicResource top.totalDown}" Foreground="{StaticResource DimBrush}" FontSize="10.5"/>
                         <TextBlock Text="{Binding TotalDownText}" Foreground="{StaticResource BlueBrush}"
                                    FontSize="15" FontWeight="Bold"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,14,0">
-                        <TextBlock Text="会话累计" Foreground="{StaticResource DimBrush}" FontSize="10.5"/>
+                        <TextBlock Text="{DynamicResource top.session}" Foreground="{StaticResource DimBrush}" FontSize="10.5"/>
                         <TextBlock Text="{Binding SessionText}" Foreground="{StaticResource DimBrush}" FontSize="12"/>
                     </StackPanel>
                     <local:TrafficChart x:Name="Chart" Width="230" Height="40" VerticalAlignment="Center"/>
@@ -103,7 +103,7 @@
                 Cursor="Hand" MouseLeftButtonUp="OnBannerClick"
                 Visibility="{Binding BannerVisible, Converter={StaticResource BoolToVis}}">
             <TextBlock Text="{Binding BannerText}" Foreground="#F0C674" FontWeight="SemiBold"
-                       ToolTip="点击可过滤出可疑进程"/>
+                       ToolTip="{DynamicResource top.onlyFlagged}"/>
         </Border>
 
         <!-- ================= 状态栏 ================= -->
@@ -120,11 +120,11 @@
             </DockPanel>
         </Border>
 
-        <!-- ================= 主区：7 页 ================= -->
+        <!-- ================= 主区：8 页 ================= -->
         <TabControl x:Name="MainTabs" TabStripPlacement="Left" Margin="8">
 
             <!-- ========== 1. 总览 ========== -->
-            <TabItem Header="总览">
+            <TabItem Header="{DynamicResource tab.overview}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -138,17 +138,24 @@
                               EnableRowVirtualization="True">
                         <DataGrid.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="🔍 查看此进程的相关事件" Click="OnCmRelatedEvents"/>
-                                <MenuItem Header="复制详情" Click="OnCmCopyDetails"/>
-                                <MenuItem Header="打开所在文件夹" Click="OnCmOpenFolder"/>
-                                <MenuItem Header="🌐 浏览器查询此文件公开情报（会联网）" Click="OnCmQueryIntel"/>
+                                <MenuItem Header="{DynamicResource cm.related}" Command="{Binding ShowRelatedEventsCommand}"/>
+                                <MenuItem Header="{DynamicResource cm.copy}" Command="{Binding CopyCommand}"/>
+                                <MenuItem Header="{DynamicResource cm.folder}" Command="{Binding FolderCommand}"/>
+                                <MenuItem Header="{DynamicResource cm.intel}" Command="{Binding QueryFileIntelCommand}"/>
                                 <Separator/>
-                                <MenuItem Header="🚫 禁止联网" Click="OnCmBlock"/>
-                                <MenuItem Header="恢复联网" Click="OnCmUnblock"/>
+                                <MenuItem Header="{DynamicResource cm.kill}" Command="{Binding KillCommand}"/>
+                                <MenuItem Header="{DynamicResource cm.taskmgr}" Command="{Binding TaskMgrCommand}"/>
+                                <MenuItem Header="{DynamicResource cm.copyPid}" Command="{Binding CopyPidCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="{DynamicResource cm.stopService}" Command="{Binding StopServicesCommand}"/>
+                                <MenuItem Header="{DynamicResource cm.disableService}" Command="{Binding DisableServicesCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="{DynamicResource cm.block}" Command="{Binding BlockCommand}"/>
+                                <MenuItem Header="{DynamicResource cm.unblock}" Command="{Binding UnblockCommand}"/>
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="风险" Width="46" SortMemberPath="Risk">
+                            <DataGridTemplateColumn Header="{Binding [col.risk], RelativeSource={RelativeSource AncestorType=DataGrid}}" Width="46" SortMemberPath="Risk">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Ellipse Width="10" Height="10" Fill="{Binding RiskBrush}" ToolTip="{Binding RiskText}"/>
@@ -162,15 +169,15 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="进程" Binding="{Binding Name}" Width="*" SortMemberPath="Name"/>
-                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="56" SortMemberPath="Pid"
+                            <DataGridTextColumn Header="{Binding [col.process], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Name}" Width="*" SortMemberPath="Name"/>
+                            <DataGridTextColumn Header="{Binding [col.pid], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Pid}" Width="56" SortMemberPath="Pid"
                                                 ElementStyle="{StaticResource CellRight}"/>
-                            <DataGridTextColumn Header="厂商" Binding="{Binding Company}" Width="120">
+                            <DataGridTextColumn Header="{Binding [col.vendor], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Company}" Width="120">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource CellDim}"/>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="↓ 速度" Binding="{Binding DownSpeedText}" Width="90"
+                            <DataGridTextColumn Header="{Binding [col.downSpeed], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding DownSpeedText}" Width="90"
                                                 SortMemberPath="DownSpeedBytes">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource CellRight}">
@@ -178,7 +185,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="↑ 速度" Binding="{Binding UpSpeedText}" Width="90"
+                            <DataGridTextColumn Header="{Binding [col.upSpeed], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding UpSpeedText}" Width="90"
                                                 SortMemberPath="UpSpeedBytes">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource CellRight}">
@@ -186,16 +193,16 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="↓ 累计" Binding="{Binding DownTotalText}" Width="86"
+                            <DataGridTextColumn Header="{Binding [col.downTotal], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding DownTotalText}" Width="86"
                                                 SortMemberPath="DownTotalBytes" ElementStyle="{StaticResource CellRight}"/>
-                            <DataGridTextColumn Header="↑ 累计" Binding="{Binding UpTotalText}" Width="86"
+                            <DataGridTextColumn Header="{Binding [col.upTotal], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding UpTotalText}" Width="86"
                                                 SortMemberPath="UpTotalBytes" ElementStyle="{StaticResource CellRight}"/>
-                            <DataGridTextColumn Header="连接" Binding="{Binding ConnCount}" Width="50"
+                            <DataGridTextColumn Header="{Binding [col.conn], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding ConnCount}" Width="50"
                                                 SortMemberPath="ConnCount" ElementStyle="{StaticResource CellRight}"/>
-                            <DataGridTemplateColumn Header="拦截" Width="44">
+                            <DataGridTemplateColumn Header="{Binding [col.blocked], RelativeSource={RelativeSource AncestorType=DataGrid}}" Width="44">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="🚫" ToolTip="已被 NetWatch 禁止联网"
+                                        <TextBlock Text="🚫" ToolTip="{DynamicResource cm.block}"
                                                    Visibility="{Binding Blocked, Converter={StaticResource BoolToVis}}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -209,24 +216,24 @@
                         <Border Style="{StaticResource Card}" Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
                             <DockPanel>
                                 <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
-                                    <Button Content="🚫 禁止联网" Command="{Binding BlockCommand}"
+                                    <Button Content="{DynamicResource btn.block}" Command="{Binding BlockCommand}"
                                             Background="#3A1D1E" BorderBrush="#63272A"/>
-                                    <Button Content="恢复联网" Command="{Binding UnblockCommand}" Margin="8,0,0,0"/>
+                                    <Button Content="{DynamicResource btn.unblock}" Command="{Binding UnblockCommand}" Margin="8,0,0,0"/>
                                     <Button Command="{Binding ToggleTrustCommand}" Margin="8,0,0,0"
-                                            ToolTip="加入允许名单后，此软件身份的判定将显示为「正常」（你的信任决定优先于引擎），可随时撤销">
+                                            ToolTip="{DynamicResource bl.allowTitle}">
                                         <Button.Style>
                                             <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                                                <Setter Property="Content" Value="✓ 信任此软件"/>
+                                                <Setter Property="Content" Value="{DynamicResource btn.trust}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding SelectedTrusted}" Value="True">
-                                                        <Setter Property="Content" Value="取消信任"/>
+                                                        <Setter Property="Content" Value="{DynamicResource btn.untrust}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Button.Style>
                                     </Button>
-                                    <Button Content="复制详情" Command="{Binding CopyCommand}" Margin="8,0,0,0"/>
-                                    <Button Content="打开文件夹" Command="{Binding FolderCommand}" Margin="8,0,0,0"/>
+                                    <Button Content="{DynamicResource btn.copy}" Command="{Binding CopyCommand}" Margin="8,0,0,0"/>
+                                    <Button Content="{DynamicResource btn.folder}" Command="{Binding FolderCommand}" Margin="8,0,0,0"/>
                                 </StackPanel>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
@@ -238,28 +245,28 @@
                                             </StackPanel>
                                         </StackPanel>
                                         <TextBlock Text="{Binding DetailPid}" Foreground="{StaticResource DimBrush}" Margin="0,6,0,0"/>
-                                        <TextBlock Text="程序路径" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{DynamicResource d.path}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailPath}" TextWrapping="Wrap"
                                                    Foreground="{StaticResource DimBrush}"/>
-                                        <TextBlock Text="父进程" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{DynamicResource d.parent}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailParent}" TextWrapping="Wrap"
                                                    Foreground="{StaticResource DimBrush}"/>
-                                        <TextBlock Text="运行用户（Sysmon 存在时）" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{DynamicResource d.user}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailUser}" TextWrapping="Wrap"
                                                    Foreground="{StaticResource DimBrush}"/>
-                                        <TextBlock Text="命令行" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{DynamicResource d.cmdline}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailCmdLine}" TextWrapping="Wrap"
                                                    Foreground="{StaticResource DimBrush}"
                                                    ToolTip="{Binding DetailCmdLine}"/>
-                                        <TextBlock Text="所属服务（svchost 归因）" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{DynamicResource d.services}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailServices}" TextWrapping="Wrap"
                                                    Foreground="{StaticResource DimBrush}"/>
-                                        <TextBlock Text="软件身份（跨会话基线主体）" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{DynamicResource d.identity}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailIdentity}" TextWrapping="Wrap"
                                                    Foreground="{StaticResource DimBrush}"/>
-                                        <TextBlock Text="数字签名" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{DynamicResource d.signature}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailSignature}" Foreground="{Binding DetailSignatureBrush}"/>
-                                        <TextBlock Text="分析结论（提示 ≠ 确诊）" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{DynamicResource d.verdict}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailVerdict}" Foreground="{Binding DetailVerdictBrush}"
                                                    FontWeight="SemiBold" TextWrapping="Wrap"/>
                                         <ItemsControl ItemsSource="{Binding DetailRisks}" Margin="0,3,0,0">
@@ -270,20 +277,20 @@
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-                                        <Button Content="🔍 查看此进程的相关事件" Command="{Binding ShowRelatedEventsCommand}"
+                                        <Button Content="{DynamicResource btn.related}" Command="{Binding ShowRelatedEventsCommand}"
                                                 Margin="0,8,0,0" HorizontalAlignment="Left"/>
-                                        <TextBlock Text="当前连接" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{DynamicResource d.conns}" Style="{StaticResource SectionHeader}"/>
                                         <DataGrid ItemsSource="{Binding SelectedConns}" MaxHeight="190"
                                                   CanUserSortColumns="False" RowHeight="26">
                                             <DataGrid.Columns>
-                                                <DataGridTextColumn Header="远程" Binding="{Binding Remote}" Width="*"/>
-                                                <DataGridTextColumn Header="本地" Binding="{Binding Local}" Width="120"/>
-                                                <DataGridTextColumn Header="协议" Binding="{Binding ProtoText}" Width="48"/>
-                                                <DataGridTextColumn Header="状态" Binding="{Binding State}" Width="92"/>
-                                                <DataGridTextColumn Header="类型" Binding="{Binding Scope}" Width="62"/>
+                                                <DataGridTextColumn Header="{Binding [col.remote], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Remote}" Width="*"/>
+                                                <DataGridTextColumn Header="{Binding [col.local], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Local}" Width="120"/>
+                                                <DataGridTextColumn Header="{Binding [col.proto], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding ProtoText}" Width="48"/>
+                                                <DataGridTextColumn Header="{Binding [col.state], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding State}" Width="92"/>
+                                                <DataGridTextColumn Header="{Binding [col.scope], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Scope}" Width="62"/>
                                             </DataGrid.Columns>
                                         </DataGrid>
-                                        <TextBlock Text="最近 DNS 查询" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="{DynamicResource d.recentDns}" Style="{StaticResource SectionHeader}"/>
                                         <ItemsControl ItemsSource="{Binding DetailDns}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
@@ -296,7 +303,7 @@
                                 </ScrollViewer>
                             </DockPanel>
                         </Border>
-                        <TextBlock Text="← 点击左侧进程查看详情"
+                        <TextBlock Text="{DynamicResource d.placeholder}"
                                    Foreground="{StaticResource DimBrush}" FontSize="14"
                                    HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock.Style>
@@ -315,24 +322,24 @@
             </TabItem>
 
             <!-- ========== 2. 目的地排行 ========== -->
-            <TabItem Header="目的地排行">
+            <TabItem Header="{DynamicResource tab.destinations}">
                 <DataGrid ItemsSource="{Binding Destinations}" CanUserSortColumns="False">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="目的地（域名 / IP）" Binding="{Binding Display}" Width="2*"/>
-                        <DataGridTextColumn Header="类型" Binding="{Binding Scope}" Width="70"/>
-                        <DataGridTextColumn Header="↑ 累计上传" Binding="{Binding UpText}" Width="100"
+                        <DataGridTextColumn Header="{Binding [col.dest], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Display}" Width="2*"/>
+                        <DataGridTextColumn Header="{Binding [col.destScope], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Scope}" Width="70"/>
+                        <DataGridTextColumn Header="{Binding [col.upTotalDest], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding UpText}" Width="100"
                                             ElementStyle="{StaticResource CellRight}"/>
-                        <DataGridTextColumn Header="↓ 累计下载" Binding="{Binding DownText}" Width="100"
+                        <DataGridTextColumn Header="{Binding [col.downTotalDest], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding DownText}" Width="100"
                                             ElementStyle="{StaticResource CellRight}"/>
-                        <DataGridTextColumn Header="最后活动" Binding="{Binding LastText}" Width="90"
+                        <DataGridTextColumn Header="{Binding [col.lastSeen], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding LastText}" Width="90"
                                             ElementStyle="{StaticResource CellRight}"/>
-                        <DataGridTextColumn Header="涉及进程" Binding="{Binding ProcessesText}" Width="*"/>
+                        <DataGridTextColumn Header="{Binding [col.involved], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding ProcessesText}" Width="*"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
 
             <!-- ========== 3. DNS 安全 ========== -->
-            <TabItem Header="DNS 安全">
+            <TabItem Header="{DynamicResource tab.dns}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -349,27 +356,27 @@
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,6,0">
                             <StackPanel>
-                                <TextBlock Text="DNS 服务器（变更会告警）" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{DynamicResource dns.servers}" Style="{StaticResource SectionHeader}"/>
                                 <TextBlock Text="{Binding DnsServersText}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="1" Style="{StaticResource Card}" Margin="3,0,3,0">
                             <StackPanel>
-                                <TextBlock Text="系统代理 (WinINET)" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{DynamicResource dns.proxy}" Style="{StaticResource SectionHeader}"/>
                                 <TextBlock Text="{Binding ProxyText}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="2" Style="{StaticResource Card}" Margin="3,0,3,0">
                             <StackPanel>
-                                <TextBlock Text="WinHTTP 代理" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{DynamicResource dns.winhttp}" Style="{StaticResource SectionHeader}"/>
                                 <TextBlock Text="{Binding WinHttpText}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="3" Style="{StaticResource Card}" Margin="6,0,0,0">
                             <StackPanel>
-                                <TextBlock Text="hosts 文件" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{DynamicResource dns.hosts}" Style="{StaticResource SectionHeader}"/>
                                 <TextBlock Text="{Binding HostsText}" TextWrapping="Wrap"/>
-                                <Button Content="打开 hosts 文件" Command="{Binding OpenHostsCommand}"
+                                <Button Content="{DynamicResource dns.openHosts}" Command="{Binding OpenHostsCommand}"
                                         Margin="0,8,0,0" HorizontalAlignment="Left"/>
                             </StackPanel>
                         </Border>
@@ -378,15 +385,15 @@
                     <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,8,0,0">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}"
-                                       Text="实时 DNS 解析流（被动监听，零流量。浏览器开启自身“安全 DNS”时会绕过系统解析，故看不到其记录）"/>
+                                       Text="{DynamicResource dns.streamTitle}"/>
                             <DataGrid ItemsSource="{Binding DnsStream}" RowStyle="{StaticResource AlertRow}"
                                       CanUserSortColumns="False" RowHeight="26">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="时间" Binding="{Binding TimeText}" Width="70"/>
-                                    <DataGridTextColumn Header="进程" Binding="{Binding Process}" Width="150"/>
-                                    <DataGridTextColumn Header="域名" Binding="{Binding Domain}" Width="*"/>
-                                    <DataGridTextColumn Header="解析结果" Binding="{Binding Ips}" Width="1.2*"/>
-                                    <DataGridTextColumn Header="告警说明" Binding="{Binding AlertText}" Width="1.4*">
+                                    <DataGridTextColumn Header="{Binding [col.time], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding TimeText}" Width="70"/>
+                                    <DataGridTextColumn Header="{Binding [col.process], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Process}" Width="150"/>
+                                    <DataGridTextColumn Header="{Binding [col.domain], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Domain}" Width="*"/>
+                                    <DataGridTextColumn Header="{Binding [col.result], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Ips}" Width="1.2*"/>
+                                    <DataGridTextColumn Header="{Binding [col.alertNote], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding AlertText}" Width="1.4*">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource CellDim}"/>
                                         </DataGridTextColumn.ElementStyle>
@@ -399,17 +406,17 @@
                     <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,8,0,0">
                         <StackPanel>
                             <TextBlock Style="{StaticResource SectionHeader}"
-                                       Text="DNS 体检 — 主动交叉验证（点击按钮才会联网：向所选公共 DoH 发起少量查询）"/>
+                                       Text="{DynamicResource dns.checkTitle}"/>
                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                <RadioButton x:Name="RbAli" Content="阿里 223.5.5.5" IsChecked="True" GroupName="doh"
+                                <RadioButton x:Name="RbAli" Content="{DynamicResource dns.ali}" IsChecked="True" GroupName="doh"
                                              Checked="OnDohProviderChanged" VerticalAlignment="Center" Margin="0,0,14,0"/>
-                                <RadioButton x:Name="RbPod" Content="DNSPod doh.pub" GroupName="doh"
+                                <RadioButton x:Name="RbPod" Content="{DynamicResource dns.dnspod}" GroupName="doh"
                                              Checked="OnDohProviderChanged" VerticalAlignment="Center" Margin="0,0,14,0"/>
-                                <RadioButton x:Name="RbCf" Content="Cloudflare 1.1.1.1" GroupName="doh"
+                                <RadioButton x:Name="RbCf" Content="{DynamicResource dns.cloudflare}" GroupName="doh"
                                              Checked="OnDohProviderChanged" VerticalAlignment="Center" Margin="0,0,16,0"/>
                                 <TextBox Text="{Binding DohProbeDomains, UpdateSourceTrigger=PropertyChanged}" Width="360"
-                                         ToolTip="逗号分隔的探测域名（最多 8 个）"/>
-                                <Button Content="开始体检" Command="{Binding DohRunCommand}"
+                                         ToolTip="{DynamicResource doh.probeTip}"/>
+                                <Button Content="{DynamicResource dns.checkRun}" Command="{Binding DohRunCommand}"
                                         IsEnabled="{Binding DohRunning, Converter={StaticResource InvBool}}"
                                         Margin="10,0,0,0"/>
                             </StackPanel>
@@ -418,10 +425,10 @@
                             <DataGrid ItemsSource="{Binding DohResults}" MaxHeight="170" CanUserSortColumns="False"
                                       RowHeight="28" Margin="0,8,0,0">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="域名" Binding="{Binding Domain}" Width="160"/>
-                                    <DataGridTextColumn Header="本机解析结果" Binding="{Binding LocalIps}" Width="1.1*"/>
-                                    <DataGridTextColumn Header="参考源解析结果" Binding="{Binding RefIps}" Width="1.1*"/>
-                                    <DataGridTemplateColumn Header="结论" Width="*">
+                                    <DataGridTextColumn Header="{Binding [col.domain], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Domain}" Width="160"/>
+                                    <DataGridTextColumn Header="{Binding [col.localResult], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding LocalIps}" Width="1.1*"/>
+                                    <DataGridTextColumn Header="{Binding [col.refResult], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding RefIps}" Width="1.1*"/>
+                                    <DataGridTemplateColumn Header="{Binding [col.verdict], RelativeSource={RelativeSource AncestorType=DataGrid}}" Width="*">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Verdict}" Foreground="{Binding VerdictBrush}"
@@ -437,54 +444,54 @@
             </TabItem>
 
             <!-- ========== 4. 监听端口 ========== -->
-            <TabItem Header="监听端口">
+            <TabItem Header="{DynamicResource tab.ports}">
                 <DataGrid ItemsSource="{Binding Ports}" CanUserSortColumns="False">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="协议" Binding="{Binding ProtoText}" Width="55"/>
-                        <DataGridTextColumn Header="端口" Binding="{Binding Port}" Width="70"
+                        <DataGridTextColumn Header="{Binding [col.proto], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding ProtoText}" Width="55"/>
+                        <DataGridTextColumn Header="{Binding [col.port], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Port}" Width="70"
                                             ElementStyle="{StaticResource CellRight}"/>
-                        <DataGridTextColumn Header="绑定地址" Binding="{Binding Bind}" Width="150"/>
-                        <DataGridTextColumn Header="暴露范围" Binding="{Binding BindText}" Width="110"/>
-                        <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="60"
+                        <DataGridTextColumn Header="{Binding [col.bind], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Bind}" Width="150"/>
+                        <DataGridTextColumn Header="{Binding [col.exposure], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding BindText}" Width="110"/>
+                        <DataGridTextColumn Header="{Binding [col.pid], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Pid}" Width="60"
                                             ElementStyle="{StaticResource CellRight}"/>
-                        <DataGridTextColumn Header="进程" Binding="{Binding Process}" Width="*"/>
+                        <DataGridTextColumn Header="{Binding [col.process], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Process}" Width="*"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
 
             <!-- ========== 5. 事件流 ========== -->
-            <TabItem Header="事件流">
+            <TabItem Header="{DynamicResource tab.events}">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-                        <Button Content="导出 CSV" Command="{Binding ExportCommand}"/>
-                        <Button Content="清空" Command="{Binding ClearEventsCommand}" Margin="8,0,0,0"/>
-                        <Border x:Name="EventsFilterChip" Background="#33E3A836" CornerRadius="4" Padding="10,4"
+                        <Button Content="{DynamicResource ev.export}" Command="{Binding ExportCommand}"/>
+                        <Button Content="{DynamicResource ev.clear}" Command="{Binding ClearEventsCommand}" Margin="8,0,0,0"/>
+                        <Border Background="#33E3A836" CornerRadius="4" Padding="10,4"
                                 Margin="14,0,0,0" Visibility="{Binding EventsFilterVisible, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="{Binding EventsFilterText}" Foreground="#F0C674"/>
                         </Border>
-                        <Button Content="清除过滤" Command="{Binding ClearEventsFilterCommand}" Margin="6,0,0,0"
+                        <Button Content="{DynamicResource ev.clearFilter}" Command="{Binding ClearEventsFilterCommand}" Margin="6,0,0,0"
                                 Visibility="{Binding EventsFilterVisible, Converter={StaticResource BoolToVis}}"/>
-                        <TextBlock Text="记录：新连接 / 断开 / 单次 ≥1MB 传输 / DNS 与配置提示"
+                        <TextBlock Text="{DynamicResource ev.note}"
                                    Foreground="{StaticResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
                     </StackPanel>
                     <DataGrid ItemsSource="{Binding Events}" CanUserSortColumns="False">
                         <DataGrid.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="只看此进程的相关事件" Click="OnCmFilterEventPid"/>
+                                <MenuItem Header="{DynamicResource cm.filterPid}" Click="OnCmFilterEventPid"/>
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="时间" Binding="{Binding TimeText}" Width="70"/>
-                            <DataGridTemplateColumn Header="事件" Width="105">
+                            <DataGridTextColumn Header="{Binding [col.time], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding TimeText}" Width="70"/>
+                            <DataGridTemplateColumn Header="{Binding [col.kind], RelativeSource={RelativeSource AncestorType=DataGrid}}" Width="105">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding KindText}" Foreground="{Binding KindBrush}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="进程" Binding="{Binding Process}" Width="170"/>
-                            <DataGridTextColumn Header="目标 / 说明" Binding="{Binding Detail}" Width="*"/>
-                            <DataGridTextColumn Header="数据量" Binding="{Binding BytesText}" Width="90"
+                            <DataGridTextColumn Header="{Binding [col.process], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Process}" Width="170"/>
+                            <DataGridTextColumn Header="{Binding [col.target], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Detail}" Width="*"/>
+                            <DataGridTextColumn Header="{Binding [col.bytes], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding BytesText}" Width="90"
                                                 ElementStyle="{StaticResource CellRight}"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -492,7 +499,7 @@
             </TabItem>
 
             <!-- ========== 6. 拦截名单 ========== -->
-            <TabItem Header="拦截名单">
+            <TabItem Header="{DynamicResource tab.blocklist}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -500,25 +507,25 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-                        <Button Content="解除所选程序的拦截" Command="{Binding UnblockAppCommand}"/>
-                        <Button Content="刷新" Command="{Binding RefreshBlockedCommand}" Margin="8,0,0,0"/>
-                        <TextBlock Text="拦截 = Windows 防火墙规则（出站 + 入站），移除后立即恢复联网"
+                        <Button Content="{DynamicResource bl.unblockSel}" Command="{Binding UnblockAppCommand}"/>
+                        <Button Content="{DynamicResource bl.refresh}" Command="{Binding RefreshBlockedCommand}" Margin="8,0,0,0"/>
+                        <TextBlock Text="{DynamicResource bl.note}"
                                    Foreground="{StaticResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
                     </StackPanel>
                     <DataGrid Grid.Row="1" ItemsSource="{Binding BlockedApps}" CanUserSortColumns="False"
                               SelectedItem="{Binding SelectedBlocked}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="程序" Binding="{Binding DisplayName}" Width="240"/>
-                            <DataGridTextColumn Header="完整路径" Binding="{Binding Path}" Width="*"/>
-                            <DataGridTextColumn Header="规则" Binding="{Binding RulesText}" Width="90"/>
+                            <DataGridTextColumn Header="{Binding [col.app], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding DisplayName}" Width="240"/>
+                            <DataGridTextColumn Header="{Binding [col.path], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Path}" Width="*"/>
+                            <DataGridTextColumn Header="{Binding [col.rules], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding RulesText}" Width="90"/>
                         </DataGrid.Columns>
                     </DataGrid>
                     <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,8,0,0">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-                                <TextBlock Text="允许名单（你信任的软件身份，判定将显示为「正常」）"
+                                <TextBlock Text="{DynamicResource bl.allowTitle}"
                                            Foreground="{StaticResource DimBrush}" VerticalAlignment="Center"/>
-                                <Button Content="移除所选" Command="{Binding RemoveTrustedCommand}" Margin="14,0,0,0"/>
+                                <Button Content="{DynamicResource bl.removeSel}" Command="{Binding RemoveTrustedCommand}" Margin="14,0,0,0"/>
                             </StackPanel>
                             <ListBox ItemsSource="{Binding TrustedApps}" SelectedItem="{Binding SelectedTrustedApp}"
                                      MaxHeight="140" BorderThickness="0" Background="Transparent"/>
@@ -528,10 +535,9 @@
             </TabItem>
 
             <!-- ========== 7. 网络配置 ========== -->
-            <TabItem Header="网络配置">
+            <TabItem Header="{DynamicResource tab.network}">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -539,11 +545,11 @@
 
                     <DataGrid Grid.Row="0" ItemsSource="{Binding Adapters}" CanUserSortColumns="False" MaxHeight="190">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="网卡" Binding="{Binding Name}" Width="170"/>
-                            <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="70"/>
-                            <DataGridTextColumn Header="IP 地址" Binding="{Binding IpsText}" Width="1.2*"/>
-                            <DataGridTextColumn Header="网关" Binding="{Binding GwText}" Width="*"/>
-                            <DataGridTextColumn Header="DNS" Binding="{Binding DnsText}" Width="1.2*"/>
+                            <DataGridTextColumn Header="{Binding [col.adapter], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Name}" Width="170"/>
+                            <DataGridTextColumn Header="{Binding [col.status], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Status}" Width="70"/>
+                            <DataGridTextColumn Header="{Binding [col.ips], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding IpsText}" Width="1.2*"/>
+                            <DataGridTextColumn Header="{Binding [col.gateway], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding GwText}" Width="*"/>
+                            <DataGridTextColumn Header="{Binding [col.dns], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding DnsText}" Width="1.2*"/>
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -554,83 +560,104 @@
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,6,0">
                             <StackPanel>
-                                <TextBlock Text="代理设置" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{DynamicResource cfg.proxy}" Style="{StaticResource SectionHeader}"/>
                                 <TextBlock Text="{Binding ProxyText}" TextWrapping="Wrap"/>
                                 <TextBlock Text="{Binding WinHttpText}" TextWrapping="Wrap" Foreground="{StaticResource DimBrush}"/>
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="1" Style="{StaticResource Card}" Margin="6,0,0,0">
                             <StackPanel>
-                                <TextBlock Text="hosts 文件" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{DynamicResource cfg.hosts}" Style="{StaticResource SectionHeader}"/>
                                 <TextBlock Text="{Binding HostsText}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
                     </Grid>
 
                     <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,8,0,0">
-                        <StackPanel>
-                            <TextBlock Text="数据与隐私设置（行为基线是跨会话的“正常/陌生”判断依据，仅存本机）"
-                                       Style="{StaticResource SectionHeader}"/>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="基线保留" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <ComboBox x:Name="CbBaselineDays" MinWidth="92" SelectionChanged="OnBaselineDaysChanged">
-                                    <ComboBoxItem Content="30 天" Tag="30"/>
-                                    <ComboBoxItem Content="90 天" Tag="90" IsSelected="True"/>
-                                    <ComboBoxItem Content="180 天" Tag="180"/>
-                                    <ComboBoxItem Content="365 天" Tag="365"/>
-                                    <ComboBoxItem Content="不限" Tag="0"/>
-                                </ComboBox>
-                                <TextBlock Text="证据流保留" VerticalAlignment="Center" Margin="18,0,6,0"/>
-                                <ComboBox x:Name="CbEvidenceDays" MinWidth="92" SelectionChanged="OnEvidenceDaysChanged">
-                                    <ComboBoxItem Content="3 天" Tag="3"/>
-                                    <ComboBoxItem Content="7 天" Tag="7" IsSelected="True"/>
-                                    <ComboBoxItem Content="14 天" Tag="14"/>
-                                    <ComboBoxItem Content="30 天" Tag="30"/>
-                                    <ComboBoxItem Content="90 天" Tag="90"/>
-                                    <ComboBoxItem Content="不限" Tag="0"/>
-                                </ComboBox>
-                                <TextBlock Text="证据容量上限" VerticalAlignment="Center" Margin="18,0,6,0"/>
-                                <ComboBox x:Name="CbEvidenceCap" MinWidth="92" SelectionChanged="OnEvidenceCapChanged">
-                                    <ComboBoxItem Content="256 MB" Tag="256"/>
-                                    <ComboBoxItem Content="512 MB" Tag="512" IsSelected="True"/>
-                                    <ComboBoxItem Content="1 GB" Tag="1024"/>
-                                    <ComboBoxItem Content="2 GB" Tag="2048"/>
-                                </ComboBox>
-                                <CheckBox x:Name="ChkPauseBaseline" Content="暂停基线学习"
-                                          Checked="OnPauseBaselineChanged" Unchecked="OnPauseBaselineChanged"
-                                          Margin="18,0,0,0" VerticalAlignment="Center"
-                                          ToolTip="暂停后不再写入行为基线（证据流照常记录）"/>
-                                <Button Content="立即清理" Click="OnCleanupNow" Margin="18,0,0,0"/>
-                                <TextBlock Text="{Binding StorageInfo}" Foreground="{StaticResource DimBrush}"
-                                           VerticalAlignment="Center" Margin="14,0,0,0"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                <TextBlock Text="{Binding AuditStatusText}" Foreground="{StaticResource DimBrush}"
-                                           VerticalAlignment="Center"/>
-                                <Button Content="启用拦截审计" Click="OnEnableAudit" Margin="12,0,0,0"
-                                        ToolTip="启用系统审核策略「审核筛选平台连接」（auditpol，可逆），实时显示被防火墙拦截的连接"/>
-                                <TextBlock Text="{Binding SysmonStatusText}" Foreground="{StaticResource DimBrush}"
-                                           VerticalAlignment="Center" Margin="20,0,0,0"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,8,0,0">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}"
-                                       Text="配置变更历史（DNS / 代理 / hosts 被改动会在此与事件流中告警）"/>
+                                       Text="{DynamicResource cfg.historyTitle}"/>
                             <DataGrid ItemsSource="{Binding ConfigHistory}" RowStyle="{StaticResource SeriousRow}"
                                       CanUserSortColumns="False" RowHeight="26">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="时间" Binding="{Binding TimeText}" Width="130"/>
-                                    <DataGridTextColumn Header="项目" Binding="{Binding What}" Width="140"/>
-                                    <DataGridTextColumn Header="旧值" Binding="{Binding Old}" Width="*"/>
-                                    <DataGridTextColumn Header="新值" Binding="{Binding New}" Width="*"/>
+                                    <DataGridTextColumn Header="{Binding [col.time], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding TimeText}" Width="130"/>
+                                    <DataGridTextColumn Header="{Binding [col.what], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding What}" Width="140"/>
+                                    <DataGridTextColumn Header="{Binding [col.old], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Old}" Width="*"/>
+                                    <DataGridTextColumn Header="{Binding [col.new], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding New}" Width="*"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </DockPanel>
                     </Border>
                 </Grid>
+            </TabItem>
+
+            <!-- ========== 8. 设置 ========== -->
+            <TabItem Header="{DynamicResource tab.settings}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource set.language}" Style="{StaticResource SectionHeader}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox x:Name="CbLanguage" MinWidth="160" SelectionChanged="OnLanguageChanged">
+                                        <ComboBoxItem Content="{DynamicResource set.langAuto}" Tag="auto"/>
+                                        <ComboBoxItem Content="中文" Tag="zh"/>
+                                        <ComboBoxItem Content="English" Tag="en"/>
+                                    </ComboBox>
+                                    <TextBlock Text="NetWatch v1.0.1" Foreground="{StaticResource DimBrush}"
+                                               VerticalAlignment="Center" Margin="18,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource cfg.privacyTitle}" Style="{StaticResource SectionHeader}"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{DynamicResource cfg.baselineKeep}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <ComboBox x:Name="CbBaselineDays" MinWidth="92" SelectionChanged="OnBaselineDaysChanged">
+                                        <ComboBoxItem Content="30" Tag="30"/>
+                                        <ComboBoxItem Content="90" Tag="90" IsSelected="True"/>
+                                        <ComboBoxItem Content="180" Tag="180"/>
+                                        <ComboBoxItem Content="365" Tag="365"/>
+                                        <ComboBoxItem Content="{DynamicResource common.unlimited}" Tag="0"/>
+                                    </ComboBox>
+                                    <TextBlock Text="{DynamicResource cfg.evidenceKeep}" VerticalAlignment="Center" Margin="18,0,6,0"/>
+                                    <ComboBox x:Name="CbEvidenceDays" MinWidth="92" SelectionChanged="OnEvidenceDaysChanged">
+                                        <ComboBoxItem Content="3" Tag="3"/>
+                                        <ComboBoxItem Content="7" Tag="7" IsSelected="True"/>
+                                        <ComboBoxItem Content="14" Tag="14"/>
+                                        <ComboBoxItem Content="30" Tag="30"/>
+                                        <ComboBoxItem Content="90" Tag="90"/>
+                                        <ComboBoxItem Content="{DynamicResource common.unlimited}" Tag="0"/>
+                                    </ComboBox>
+                                    <TextBlock Text="{DynamicResource cfg.evidenceCap}" VerticalAlignment="Center" Margin="18,0,6,0"/>
+                                    <ComboBox x:Name="CbEvidenceCap" MinWidth="92" SelectionChanged="OnEvidenceCapChanged">
+                                        <ComboBoxItem Content="256 MB" Tag="256"/>
+                                        <ComboBoxItem Content="512 MB" Tag="512" IsSelected="True"/>
+                                        <ComboBoxItem Content="1 GB" Tag="1024"/>
+                                        <ComboBoxItem Content="2 GB" Tag="2048"/>
+                                    </ComboBox>
+                                    <CheckBox x:Name="ChkPauseBaseline" Content="{DynamicResource cfg.pauseBaseline}"
+                                              Checked="OnPauseBaselineChanged" Unchecked="OnPauseBaselineChanged"
+                                              Margin="18,0,0,0" VerticalAlignment="Center"
+                                              ToolTip="{DynamicResource cfg.pauseBaseline}"/>
+                                    <Button Content="{DynamicResource cfg.cleanNow}" Click="OnCleanupNow" Margin="18,0,0,0"/>
+                                    <TextBlock Text="{Binding StorageInfo}" Foreground="{StaticResource DimBrush}"
+                                               VerticalAlignment="Center" Margin="14,0,0,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBlock Text="{Binding AuditStatusText}" Foreground="{StaticResource DimBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <Button Content="{DynamicResource cfg.enableAudit}" Click="OnEnableAudit" Margin="12,0,0,0"
+                                            ToolTip="{DynamicResource cfg.auditOn}"/>
+                                    <TextBlock Text="{Binding SysmonStatusText}" Foreground="{StaticResource DimBrush}"
+                                               VerticalAlignment="Center" Margin="20,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
         </TabControl>
     </DockPanel>

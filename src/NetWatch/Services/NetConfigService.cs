@@ -69,7 +69,7 @@ public sealed class NetConfigService : IDisposable
                              .ToArray();
 
         var (proxyText, _) = ReadWinInetProxy();
-        var winHttp = NativeMethods.GetWinHttpProxy();
+        var winHttp = FormatWinHttp(NativeMethods.GetWinHttpProxy());
         var hosts = ReadHosts(out var hostsModified);
         var hostsHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
             Encoding.UTF8.GetBytes(string.Join("|", hosts.Select(h => h.Ip + ":" + string.Join(",", h.Hosts))))));
@@ -81,26 +81,29 @@ public sealed class NetConfigService : IDisposable
         if (old == null) return; // 首轮为基线，不产生“变更”
 
         if (!old.AllDns.SequenceEqual(allDns) && !new HashSet<string>(old.AllDns, StringComparer.OrdinalIgnoreCase).SetEquals(allDns))
-            Changes.Enqueue(new ConfigChange(DateTime.UtcNow, "DNS 服务器",
+            Changes.Enqueue(new ConfigChange(DateTime.UtcNow, L10n.T("cfg.what.dns"),
                 Fmt(old.AllDns), Fmt(allDns), true));
 
         if (old.ProxyText != proxyText)
-            Changes.Enqueue(new ConfigChange(DateTime.UtcNow, "系统代理 (WinINET)",
+            Changes.Enqueue(new ConfigChange(DateTime.UtcNow, L10n.T("cfg.what.proxy"),
                 old.ProxyText, proxyText, true));
 
         if (old.WinHttpText != winHttp)
-            Changes.Enqueue(new ConfigChange(DateTime.UtcNow, "WinHTTP 代理",
+            Changes.Enqueue(new ConfigChange(DateTime.UtcNow, L10n.T("cfg.what.winhttp"),
                 old.WinHttpText, winHttp, false));
 
         if (hostsHash != _lastHostsHash)
         {
             if (_lastHostsHash.Length > 0)
-                Changes.Enqueue(new ConfigChange(DateTime.UtcNow, "hosts 文件",
-                    $"{old.Hosts.Count} 条生效映射", $"{hosts.Count} 条生效映射", true));
+                Changes.Enqueue(new ConfigChange(DateTime.UtcNow, L10n.T("cfg.what.hosts"),
+                    string.Format(L10n.T("cfg.entriesCount"), old.Hosts.Count),
+                    string.Format(L10n.T("cfg.entriesCount"), hosts.Count), true));
             _lastHostsHash = hostsHash;
         }
 
-        static string Fmt(string[] xs) => xs.Length == 0 ? "（无）" : string.Join(", ", xs);
+        static string FormatWinHttp((bool Direct, string Proxy) p) => p.Direct ? L10n.T("cfg.direct") : p.Proxy;
+
+        static string Fmt(string[] xs) => xs.Length == 0 ? L10n.T("cfg.none") : string.Join(", ", xs);
     }
 
     private (string Text, string? AutoConfig) ReadWinInetProxy()
@@ -108,15 +111,15 @@ public sealed class NetConfigService : IDisposable
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings");
-            if (key == null) return ("未启用", null);
+            if (key == null) return (L10n.T("cfg.proxyOff"), null);
             int enable = key.GetValue("ProxyEnable") is int v ? v : 0;
             string? server = key.GetValue("ProxyServer") as string;
             string? pac = key.GetValue("AutoConfigURL") as string;
-            string text = enable == 1 && !string.IsNullOrEmpty(server) ? $"已启用: {server}" : "未启用";
+            string text = enable == 1 && !string.IsNullOrEmpty(server) ? L10n.T("cfg.proxyOn", server) : L10n.T("cfg.proxyOff");
             if (!string.IsNullOrEmpty(pac)) text += $"　(PAC 脚本: {pac})";
             return (text, pac);
         }
-        catch { return ("读取失败", null); }
+        catch { return (L10n.T("cfg.readFail"), null); }
     }
 
     private List<HostEntry> ReadHosts(out DateTime modified)

@@ -51,7 +51,7 @@ public static class Util
     }
 
     public static string ScopeText(bool loopback, bool lan)
-        => loopback ? "回环" : lan ? "局域网" : "公网";
+        => loopback ? L10n.T("scope.loopback") : lan ? L10n.T("scope.lan") : L10n.T("scope.public");
 
     /// 拆分 "1.2.3.4:443" / "[fe80::1]:1900" 端点表示，IPv6 用方括号约定
     public static (string Addr, int Port) SplitEndpoint(string endpoint)

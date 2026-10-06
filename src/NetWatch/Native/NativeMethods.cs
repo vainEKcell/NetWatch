@@ -72,17 +72,17 @@ internal static partial class NativeMethods
     private static extern bool WinHttpGetDefaultProxyConfiguration(ref WINHTTP_PROXY_INFO pInfo);
 
     /// 返回 WinHTTP 层默认代理描述（"DIRECT" 或代理地址）
-    public static string GetWinHttpProxy()
+    public static (bool Direct, string Proxy) GetWinHttpProxy()
     {
         try
         {
             var info = new WINHTTP_PROXY_INFO();
-            if (!WinHttpGetDefaultProxyConfiguration(ref info)) return "未知";
+            if (!WinHttpGetDefaultProxyConfiguration(ref info)) return (false, "?");
             try
             {
-                if (info.AccessType == 1) return "直接连接（无代理）";
+                if (info.AccessType == 1) return (true, "");
                 string proxy = info.Proxy != IntPtr.Zero ? Marshal.PtrToStringUni(info.Proxy) ?? "" : "";
-                return string.IsNullOrEmpty(proxy) ? "直接连接（无代理）" : proxy;
+                return string.IsNullOrEmpty(proxy) ? (true, "") : (false, proxy);
             }
             finally
             {
@@ -90,6 +90,6 @@ internal static partial class NativeMethods
                 if (info.ProxyBypass != IntPtr.Zero) Marshal.FreeHGlobal(info.ProxyBypass);
             }
         }
-        catch { return "读取失败"; }
+        catch { return (false, "?"); }
     }
 }
