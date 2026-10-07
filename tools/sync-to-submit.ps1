@@ -2,7 +2,8 @@
 # 机制：git push（原子、可靠，不会被文件锁坑）；提审仓库配置了
 # receive.denyCurrentBranch=updateInstead，推送后其工作区自动更新，
 # GitHub Desktop 打开该目录即可看到新提交（必要时 Repository → Refresh）。
-# 用法: powershell -ExecutionPolicy Bypass -File tools\sync-to-submit.ps1
+# 用法: powershell -ExecutionPolicy Bypass -File tools\sync-to-submit.ps1 [-PushGitHub]
+param([switch]$PushGitHub)
 $ErrorActionPreference = 'Stop'
 $src = Split-Path $PSScriptRoot
 $dst = "S:\GitSubmitClass\NetWatch"
@@ -29,6 +30,18 @@ if ($dirty -gt 0) {
 
 git -C $src push submit main
 if ($LASTEXITCODE -ne 0) { throw "推送失败（如历史分叉，请检查两侧提交）" }
+
+# 可选：同时推送到 GitHub（origin）。默认不推——保留你在 GitHub Desktop 审核后手动推送的流程。
+if ($PushGitHub) {
+    $originUrl = git -C $dst remote get-url origin 2>$null
+    if ($originUrl) {
+        git -C $dst push origin main
+        if ($LASTEXITCODE -ne 0) { throw "推送到 GitHub 失败" }
+        Write-Output "已同步推送到 GitHub（origin）。"
+    } else {
+        Write-Output "⚠ 提审仓库未配置 origin，跳过 GitHub 推送。"
+    }
+}
 
 Write-Output "--- 提审仓库最新提交 ---"
 git -C $dst log --oneline -3
