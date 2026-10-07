@@ -20,11 +20,11 @@
 
 ## 下载
 
-去 [Releases](https://github.com/vainEKcell/NetWatch/releases) 下 `NetWatch-Setup-x.x.x.exe`，双击安装。打开时弹 UAC 点"是"——要管理员权限，因为要读内核网络事件和改防火墙规则，这个绕不开。
+右侧 [Releases](https://github.com/vainEKcell/NetWatch/releases) 中找到最新版本 `NetWatch-Setup-x.x.x.exe`，双击安装。打开时弹 UAC 点"是"——需要管理员权限，用于读内核网络事件和改防火墙规则，若对此有顾虑请不要下载该项目。
 
-## 自己编译
+## 快速开始
 
-装个 .NET SDK 就行：
+其实装个 .NET SDK 就行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File build-installer.ps1
