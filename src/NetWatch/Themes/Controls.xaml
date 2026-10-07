@@ -24,7 +24,7 @@
     </Style>
 
     <Style TargetType="ToolTip">
-        <Setter Property="Background" Value="#1C2432"/>
+        <Setter Property="Background" Value="{DynamicResource MenuBgBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource FgBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
         <Setter Property="HasDropShadow" Value="False"/>
@@ -116,7 +116,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="Box" Property="Background" Value="#1B2A47"/>
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource CheckOnBrush}"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
@@ -373,7 +373,7 @@
 
     <!-- ===== 右键菜单 ===== -->
     <Style TargetType="ContextMenu">
-        <Setter Property="Background" Value="#1C2432"/>
+        <Setter Property="Background" Value="{DynamicResource MenuBgBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource FgBrush}"/>
         <Setter Property="Padding" Value="4"/>

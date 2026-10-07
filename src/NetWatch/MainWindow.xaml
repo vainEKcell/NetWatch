@@ -13,24 +13,24 @@
         <Style x:Key="ProcRow" TargetType="DataGridRow">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding RiskByte}" Value="3">
-                    <Setter Property="Background" Value="#2E1517"/>
+                    <Setter Property="Background" Value="{DynamicResource RowHighBrush}"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding RiskByte}" Value="2">
-                    <Setter Property="Background" Value="#2A2113"/>
+                    <Setter Property="Background" Value="{DynamicResource RowMediumBrush}"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
         <Style x:Key="AlertRow" TargetType="DataGridRow">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsAlert}" Value="True">
-                    <Setter Property="Background" Value="#332215"/>
+                    <Setter Property="Background" Value="{DynamicResource RowAlertBrush}"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
         <Style x:Key="SeriousRow" TargetType="DataGridRow">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Serious}" Value="True">
-                    <Setter Property="Background" Value="#2A2113"/>
+                    <Setter Property="Background" Value="{DynamicResource RowMediumBrush}"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -661,7 +661,7 @@
                                         <ComboBoxItem Content="{DynamicResource set.themeDark}" Tag="dark"/>
                                         <ComboBoxItem Content="{DynamicResource set.themeLight}" Tag="light"/>
                                     </ComboBox>
-                                    <TextBlock Text="{Binding AppVersion}" Foreground="{StaticResource DimBrush}"
+                                    <TextBlock Text="{Binding AppVersion}" Foreground="{DynamicResource DimBrush}"
                                                VerticalAlignment="Center" Margin="18,0,0,0"/>
                                 </StackPanel>
                             </StackPanel>
