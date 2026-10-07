@@ -6,7 +6,7 @@
 
 ## 界面
 
-<img width="2560" height="1380" alt="NetWatch 界面" src="https://github.com/user-attachments/assets/aafd2a5c-068b-44c8-bc60-7b74e1a814dd" />
+<img width="1734" height="1092" alt="屏幕截图 2026-10-07 141906" src="https://github.com/user-attachments/assets/0107534b-4564-474d-8551-546effe527a3" />
 
 ## 它能干什么
 
