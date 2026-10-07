@@ -85,7 +85,12 @@ public partial class MainWindow : Window
     private void OnProcessSort(object sender, DataGridSortingEventArgs e)
     {
         e.Handled = true;
-        _vm.ApplySort(e.Column.SortMemberPath ?? "");
+        bool desc = _vm.ApplySort(e.Column.SortMemberPath ?? "");
+        // 维护列头三角指示：先清所有列，再设置当前列方向
+        foreach (var c in ProcessGrid.Columns) c.SortDirection = null;
+        e.Column.SortDirection = desc
+            ? System.ComponentModel.ListSortDirection.Descending
+            : System.ComponentModel.ListSortDirection.Ascending;
     }
 
     private void OnBannerClick(object sender, System.Windows.Input.MouseButtonEventArgs e)

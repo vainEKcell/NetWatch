@@ -10,7 +10,6 @@
                 <ResourceDictionary Source="Themes/Palette.Dark.xaml"/>
                 <ResourceDictionary Source="Themes/Strings.zh.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <svc:Loc x:Key="Loc"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

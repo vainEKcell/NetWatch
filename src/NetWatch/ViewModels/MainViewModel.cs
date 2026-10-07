@@ -869,7 +869,8 @@ public sealed class MainViewModel : VmBase, IDisposable
         CollSync.Sort(Rows, cmp, _sortDesc);
     }
 
-    public void ApplySort(string memberPath)
+    /// 应用排序；返回是否为降序（供列头箭头指示）
+    public bool ApplySort(string memberPath)
     {
         if (memberPath == _sortKey) _sortDesc = !_sortDesc;
         else
@@ -878,6 +879,7 @@ public sealed class MainViewModel : VmBase, IDisposable
             _sortDesc = memberPath is "Name" or "Pid";
         }
         SortRows();
+        return _sortDesc;
     }
 
     private bool MatchSearch(ProcessRowVM r)

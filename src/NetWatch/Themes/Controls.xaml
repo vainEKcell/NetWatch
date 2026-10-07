@@ -213,12 +213,28 @@
                         <Grid>
                             <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center"
                                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                            <Path x:Name="SortArrow" Fill="{DynamicResource DimBrush}" Width="10" Height="7"
+                                  Stretch="Fill" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                  Margin="0,0,3,0" Visibility="Collapsed"
+                                  Data="M 0 0 L 10 0 L 5 7 Z"/>
                             <Thumb x:Name="PART_LeftHeaderGripper" Style="{StaticResource HeaderGripper}"
                                    HorizontalAlignment="Left" Width="6" Cursor="SizeWE"/>
                             <Thumb x:Name="PART_RightHeaderGripper" Style="{StaticResource HeaderGripper}"
-                                   HorizontalAlignment="Right" Width="6" Cursor="SizeWE"/>
+                                   HorizontalAlignment="Right" Width="10" Cursor="SizeWE"/>
                         </Grid>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="SortDirection" Value="Ascending">
+                            <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="SortArrow" Property="Fill" Value="{DynamicResource AccentBrush}"/>
+                            <Setter TargetName="SortArrow" Property="Data" Value="M 5 0 L 10 7 L 0 7 Z"/>
+                        </Trigger>
+                        <Trigger Property="SortDirection" Value="Descending">
+                            <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="SortArrow" Property="Fill" Value="{DynamicResource AccentBrush}"/>
+                            <Setter TargetName="SortArrow" Property="Data" Value="M 0 0 L 10 0 L 5 7 Z"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
