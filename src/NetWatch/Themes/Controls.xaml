@@ -351,7 +351,7 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ListBoxItem">
-                                <Border x:Name="Bd" Background="Transparent" CornerRadius="4"
+                                <Border x:Name="Bd" Background="Transparent" CornerRadius="6"
                                         Padding="{TemplateBinding Padding}">
                                     <ContentPresenter/>
                                 </Border>
@@ -360,7 +360,7 @@
                                         <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelBrush}"/>
                                     </Trigger>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="Bd" Property="Background" Value="#1E2735"/>
+                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TabHoverBrush}"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>

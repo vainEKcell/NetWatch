@@ -34,6 +34,36 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+        <!-- Win11 风格导航项：大圆角 + 左侧强调药丸条 -->
+        <Style x:Key="NavItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="6,2"/>
+            <Setter Property="Foreground" Value="{DynamicResource FgBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Grid>
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="7"
+                                    Padding="{TemplateBinding Padding}" Margin="4,0,0,0">
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </Border>
+                            <Rectangle x:Name="Pill" Width="3.5" Height="18" RadiusX="1.75" RadiusY="1.75"
+                                       Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Left"
+                                       VerticalAlignment="Center" Margin="6,0,0,0" Visibility="Collapsed"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TabHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelBrush}"/>
+                                <Setter TargetName="Pill" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <DockPanel>
@@ -130,13 +160,8 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <ListBox x:Name="Nav" Grid.Column="0" SelectionMode="Single" SelectionChanged="OnNavChanged"
-                     FontSize="14">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                        <Setter Property="Padding" Value="14,10"/>
-                        <Setter Property="Margin" Value="0,2"/>
-                    </Style>
-                </ListBox.ItemContainerStyle>
+                     FontSize="14" ItemContainerStyle="{StaticResource NavItemStyle}"
+                     Background="Transparent" BorderThickness="0">
                 <ListBoxItem Content="{DynamicResource tab.overview}" IsSelected="True"/>
                 <ListBoxItem Content="{DynamicResource tab.destinations}"/>
                 <ListBoxItem Content="{DynamicResource tab.dns}"/>
