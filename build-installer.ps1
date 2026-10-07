@@ -17,6 +17,9 @@ $iscc = @(
 if (-not $iscc) { throw "未找到 Inno Setup，请先: winget install JRSoftware.InnoSetup" }
 Write-Output "    ISCC: $iscc"
 
+# 部署中文安装向导语言包（安装器语言跟随系统）
+Copy-Item "$root\tools\ChineseSimplified.isl" (Join-Path (Split-Path $iscc) 'Languages\') -Force
+
 Write-Output '==> 3/3 打包安装器'
 & $iscc "/DMyAppVersion=$Version" "$root\setup.iss"
 if ($LASTEXITCODE -ne 0) { throw "打包失败" }

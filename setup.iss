@@ -25,6 +25,12 @@ SolidCompression=yes
 WizardStyle=modern
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
+ShowLanguageDialog=no
+
+[Languages]
+; 安装向导语言跟随系统：Inno 会按系统 UI 语言自动选择（zh 系统选中文，其他选英文）
+Name: "en"; MessagesFile: "compiler:Default.isl"
+Name: "zh"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked

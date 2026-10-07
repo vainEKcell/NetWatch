@@ -3,4 +3,5 @@ obj/
 publish/
 dist/
 verify/
+docs/
 *.user
