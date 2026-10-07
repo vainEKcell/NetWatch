@@ -10,7 +10,7 @@
   ```powershell
   powershell -ExecutionPolicy Bypass -File S:\ZWorker\NetWatch\tools\sync-to-submit.ps1
   ```
-  脚本会把源码与 `.git` 历史镜像过去（自动排除 bin/obj/publish/dist/verify），并输出目标仓库状态。
+  脚本通过 **git push** 把新提交推到提审仓库（原子操作，提审仓库工作区自动更新；若提审侧有未提交改动会拒绝并提示）。
 
 **首次用 GitHub Desktop 推送：**
 1. 打开 GitHub Desktop → `File → Add local repository...` → 选择 `S:\GitSubmitClass\NetWatch`

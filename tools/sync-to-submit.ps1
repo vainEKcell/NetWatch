@@ -1,27 +1,35 @@
-﻿# 开发目录 → 提审目录（S:\GitSubmitClass\NetWatch）一键同步
-# 保留完整 git 历史（含 .git），供 GitHub Desktop 打开审核后推送。
+﻿# 开发仓库 → 提审仓库（S:\GitSubmitClass\NetWatch）同步
+# 机制：git push（原子、可靠，不会被文件锁坑）；提审仓库配置了
+# receive.denyCurrentBranch=updateInstead，推送后其工作区自动更新，
+# GitHub Desktop 打开该目录即可看到新提交（必要时 Repository → Refresh）。
 # 用法: powershell -ExecutionPolicy Bypass -File tools\sync-to-submit.ps1
 $ErrorActionPreference = 'Stop'
+$src = Split-Path $PSScriptRoot
+$dst = "S:\GitSubmitClass\NetWatch"
 
-$src = Split-Path $PSScriptRoot                      # 开发根目录（tools 的上一级）
-$dst = "S:\GitSubmitClass\NetWatch"                  # 提审目录（项目隔离）
+Write-Output "开发: $src"
+Write-Output "提审: $dst"
 
-Write-Output "源: $src"
-Write-Output "目标: $dst"
+# 首次或提审仓库损坏时：重新克隆
+if (-not (Test-Path "$dst\.git")) {
+    Write-Output "提审仓库不存在，重新克隆…"
+    git clone $src $dst
+    if ($LASTEXITCODE -ne 0) { throw "克隆失败" }
+}
 
-# /MIR 镜像（含 .git 历史目录）；排除构建产物与临时内容
-robocopy $src $dst /MIR `
-    /XD bin obj publish dist verify .vs node_modules `
-    /XF *.user *.log `
-    /NFL /NDL /NJH /NP /MT:8 | Out-Null
+# 接收配置：推送到已检出分支时同步更新工作区
+git -C $dst config receive.denyCurrentBranch updateInstead
 
-$code = $LASTEXITCODE
-if ($code -ge 8) { throw "robocopy 失败，退出码 $code" }
+# 有未提交改动的工作区会拒绝推送（保护审核状态），此处如实报告
+$dirty = (git -C $dst status --porcelain | Measure-Object -Line).Lines
+if ($dirty -gt 0) {
+    Write-Output "⚠ 提审仓库工作区有 $dirty 项未提交改动，本次推送被拒绝。请在 GitHub Desktop 中先处理（提交或放弃）。"
+    exit 1
+}
 
-# 同步后校验：目标仓库状态应为干净、历史完整
-git -C $dst status --short
-$dirty = (git -C $dst status --short | Measure-Object -Line).Lines
-$count = (git -C $dst log --oneline | Measure-Object -Line).Lines
-Write-Output "同步完成（robocopy 退出码 $code，0-7 均为成功）"
-Write-Output "目标仓库：$count 个提交，未提交变更 $dirty 项"
-Write-Output "下一步：GitHub Desktop → File → Add local repository → 选择 $dst → 审核历史后 Publish"
+git -C $src push submit main
+if ($LASTEXITCODE -ne 0) { throw "推送失败（如历史分叉，请检查两侧提交）" }
+
+Write-Output "--- 提审仓库最新提交 ---"
+git -C $dst log --oneline -3
+Write-Output "完成。GitHub Desktop 中若未立即显示，请 Repository → Refresh。"
