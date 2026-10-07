@@ -1,12 +1,16 @@
 <Application x:Class="NetWatch.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:svc="clr-namespace:NetWatch.Services"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Themes/Dark.xaml"/>
+                <ResourceDictionary Source="Themes/Controls.xaml"/>
+                <ResourceDictionary Source="Themes/Palette.Dark.xaml"/>
+                <ResourceDictionary Source="Themes/Strings.zh.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <svc:Loc x:Key="Loc"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

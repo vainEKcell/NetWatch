@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:NetWatch"
         Title="NetWatch"
         Width="1400" Height="880" MinWidth="1150" MinHeight="680"
-        Background="{StaticResource BgBrush}"
+        Background="{DynamicResource BgBrush}"
         FontFamily="Microsoft YaHei UI" FontSize="12.5"
         Icon="Assets/app.ico">
 
@@ -37,10 +37,10 @@
 
     <DockPanel>
         <!-- ================= 顶栏 ================= -->
-        <Border DockPanel.Dock="Top" Background="{StaticResource PanelBrush}"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="14,8">
+        <Border DockPanel.Dock="Top" Background="{DynamicResource PanelBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="14,8">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                <WrapPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <Image Source="Assets/app.ico" Width="26" Height="26"/>
                     <TextBlock Text="NetWatch" FontSize="16" FontWeight="Bold" Margin="9,0,18,0" VerticalAlignment="Center"/>
                     <Button Command="{Binding TogglePauseCommand}" VerticalAlignment="Center">
@@ -57,7 +57,7 @@
                     </Button>
                     <CheckBox Content="{DynamicResource top.hideLoopback}" IsChecked="{Binding HideLoopback}" Margin="14,0,0,0" VerticalAlignment="Center"/>
                     <CheckBox Content="{DynamicResource top.onlyFlagged}" IsChecked="{Binding OnlyFlagged}" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                    <Border Background="{StaticResource InputBrush}" BorderBrush="{StaticResource BorderBrush}"
+                    <Border Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1" CornerRadius="4" Margin="16,0,0,0" VerticalAlignment="Center">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -68,63 +68,81 @@
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                      TextChanged="OnSearchChanged" Padding="7,4"/>
                             <TextBlock x:Name="SearchHint" Text="{DynamicResource top.searchHint}"
-                                       Foreground="{StaticResource DimBrush}" Margin="8,0,0,0"
+                                       Foreground="{DynamicResource DimBrush}" Margin="8,0,0,0"
                                        VerticalAlignment="Center" IsHitTestVisible="False"/>
                             <TextBlock Grid.Column="1" Text="🔍" Margin="0,0,8,0" VerticalAlignment="Center"
-                                       Foreground="{StaticResource DimBrush}"/>
+                                       Foreground="{DynamicResource DimBrush}"/>
                         </Grid>
                     </Border>
-                </StackPanel>
+                </WrapPanel>
 
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                     <StackPanel Margin="0,0,20,0">
-                        <TextBlock Text="{DynamicResource top.totalUp}" Foreground="{StaticResource DimBrush}" FontSize="10.5"/>
-                        <TextBlock Text="{Binding TotalUpText}" Foreground="{StaticResource GreenBrush}"
+                        <TextBlock Text="{DynamicResource top.totalUp}" Foreground="{DynamicResource DimBrush}" FontSize="10.5"/>
+                        <TextBlock Text="{Binding TotalUpText}" Foreground="{DynamicResource GreenBrush}"
                                    FontSize="15" FontWeight="Bold"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,20,0">
-                        <TextBlock Text="{DynamicResource top.totalDown}" Foreground="{StaticResource DimBrush}" FontSize="10.5"/>
-                        <TextBlock Text="{Binding TotalDownText}" Foreground="{StaticResource BlueBrush}"
+                        <TextBlock Text="{DynamicResource top.totalDown}" Foreground="{DynamicResource DimBrush}" FontSize="10.5"/>
+                        <TextBlock Text="{Binding TotalDownText}" Foreground="{DynamicResource BlueBrush}"
                                    FontSize="15" FontWeight="Bold"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,14,0">
-                        <TextBlock Text="{DynamicResource top.session}" Foreground="{StaticResource DimBrush}" FontSize="10.5"/>
-                        <TextBlock Text="{Binding SessionText}" Foreground="{StaticResource DimBrush}" FontSize="12"/>
+                        <TextBlock Text="{DynamicResource top.session}" Foreground="{DynamicResource DimBrush}" FontSize="10.5"/>
+                        <TextBlock Text="{Binding SessionText}" Foreground="{DynamicResource DimBrush}" FontSize="12"/>
                     </StackPanel>
-                    <local:TrafficChart x:Name="Chart" Width="230" Height="40" VerticalAlignment="Center"/>
                 </StackPanel>
+                <local:TrafficChart x:Name="Chart" MinWidth="180" Height="40" VerticalAlignment="Center"/>
+
 
                 <Grid/>
             </DockPanel>
         </Border>
 
         <!-- ================= 可疑横幅 ================= -->
-        <Border x:Name="Banner" DockPanel.Dock="Top" Background="#33E3A836" Padding="14,6"
+        <Border x:Name="Banner" DockPanel.Dock="Top" Background="{DynamicResource BannerBgBrush}" Padding="14,6"
                 Cursor="Hand" MouseLeftButtonUp="OnBannerClick"
                 Visibility="{Binding BannerVisible, Converter={StaticResource BoolToVis}}">
-            <TextBlock Text="{Binding BannerText}" Foreground="#F0C674" FontWeight="SemiBold"
+            <TextBlock Text="{Binding BannerText}" Foreground="{DynamicResource BannerTextBrush}" FontWeight="SemiBold"
                        ToolTip="{DynamicResource top.onlyFlagged}"/>
         </Border>
 
         <!-- ================= 状态栏 ================= -->
-        <Border DockPanel.Dock="Bottom" Background="{StaticResource PanelBrush}"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="14,5">
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource PanelBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="14,5">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <TextBlock Text="{Binding ConnCountText}" Foreground="{StaticResource DimBrush}"/>
-                    <TextBlock Text="{Binding BlockedCountText}" Foreground="{StaticResource DimBrush}" Margin="18,0,0,0"/>
-                    <TextBlock Text="{Binding BlockedConnCountText}" Foreground="{StaticResource RedBrush}" Margin="18,0,0,0"/>
-                    <TextBlock Text="{Binding DnsAlertCountText}" Foreground="{StaticResource AmberBrush}" Margin="18,0,0,0"/>
+                    <TextBlock Text="{Binding ConnCountText}" Foreground="{DynamicResource DimBrush}"/>
+                    <TextBlock Text="{Binding BlockedCountText}" Foreground="{DynamicResource DimBrush}" Margin="18,0,0,0"/>
+                    <TextBlock Text="{Binding BlockedConnCountText}" Foreground="{DynamicResource RedBrush}" Margin="18,0,0,0"/>
+                    <TextBlock Text="{Binding DnsAlertCountText}" Foreground="{DynamicResource AmberBrush}" Margin="18,0,0,0"/>
                 </StackPanel>
                 <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusBrush}"/>
             </DockPanel>
         </Border>
 
-        <!-- ================= 主区：8 页 ================= -->
-        <TabControl x:Name="MainTabs" TabStripPlacement="Left" Margin="8">
+        <!-- ================= 主区：可拖宽导航 + 8 页 ================= -->
+        <Grid Margin="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="190" MinWidth="130" MaxWidth="430"/>
+                <ColumnDefinition Width="6"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <ListBox x:Name="Nav" Grid.Column="0" SelectionMode="Single" SelectionChanged="OnNavChanged">
+                <ListBoxItem Content="{DynamicResource tab.overview}" IsSelected="True"/>
+                <ListBoxItem Content="{DynamicResource tab.destinations}"/>
+                <ListBoxItem Content="{DynamicResource tab.dns}"/>
+                <ListBoxItem Content="{DynamicResource tab.ports}"/>
+                <ListBoxItem Content="{DynamicResource tab.events}"/>
+                <ListBoxItem Content="{DynamicResource tab.blocklist}"/>
+                <ListBoxItem Content="{DynamicResource tab.network}"/>
+                <ListBoxItem Content="{DynamicResource tab.settings}"/>
+            </ListBox>
+            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="Transparent"/>
+            <Grid Grid.Column="2">
 
             <!-- ========== 1. 总览 ========== -->
-            <TabItem Header="{DynamicResource tab.overview}">
+            <Grid x:Name="PageOverview">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -155,7 +173,7 @@
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="{Binding [col.risk], RelativeSource={RelativeSource AncestorType=DataGrid}}" Width="46" SortMemberPath="Risk">
+                            <DataGridTemplateColumn Header="{Binding [col.risk], Source={StaticResource Loc}}" Width="46" SortMemberPath="Risk">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Ellipse Width="10" Height="10" Fill="{Binding RiskBrush}" ToolTip="{Binding RiskText}"/>
@@ -169,37 +187,37 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="{Binding [col.process], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Name}" Width="*" SortMemberPath="Name"/>
-                            <DataGridTextColumn Header="{Binding [col.pid], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Pid}" Width="56" SortMemberPath="Pid"
+                            <DataGridTextColumn Header="{Binding [col.process], Source={StaticResource Loc}}" Binding="{Binding Name}" Width="2*" SortMemberPath="Name"/>
+                            <DataGridTextColumn Header="{Binding [col.pid], Source={StaticResource Loc}}" Binding="{Binding Pid}" Width="56" SortMemberPath="Pid"
                                                 ElementStyle="{StaticResource CellRight}"/>
-                            <DataGridTextColumn Header="{Binding [col.vendor], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Company}" Width="120">
+                            <DataGridTextColumn Header="{Binding [col.vendor], Source={StaticResource Loc}}" Binding="{Binding Company}" Width="1*">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource CellDim}"/>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="{Binding [col.downSpeed], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding DownSpeedText}" Width="90"
+                            <DataGridTextColumn Header="{Binding [col.downSpeed], Source={StaticResource Loc}}" Binding="{Binding DownSpeedText}" Width="90"
                                                 SortMemberPath="DownSpeedBytes">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource CellRight}">
-                                        <Setter Property="Foreground" Value="{StaticResource BlueBrush}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource BlueBrush}"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="{Binding [col.upSpeed], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding UpSpeedText}" Width="90"
+                            <DataGridTextColumn Header="{Binding [col.upSpeed], Source={StaticResource Loc}}" Binding="{Binding UpSpeedText}" Width="90"
                                                 SortMemberPath="UpSpeedBytes">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource CellRight}">
-                                        <Setter Property="Foreground" Value="{StaticResource GreenBrush}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource GreenBrush}"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="{Binding [col.downTotal], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding DownTotalText}" Width="86"
+                            <DataGridTextColumn Header="{Binding [col.downTotal], Source={StaticResource Loc}}" Binding="{Binding DownTotalText}" Width="86"
                                                 SortMemberPath="DownTotalBytes" ElementStyle="{StaticResource CellRight}"/>
-                            <DataGridTextColumn Header="{Binding [col.upTotal], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding UpTotalText}" Width="86"
+                            <DataGridTextColumn Header="{Binding [col.upTotal], Source={StaticResource Loc}}" Binding="{Binding UpTotalText}" Width="86"
                                                 SortMemberPath="UpTotalBytes" ElementStyle="{StaticResource CellRight}"/>
-                            <DataGridTextColumn Header="{Binding [col.conn], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding ConnCount}" Width="50"
+                            <DataGridTextColumn Header="{Binding [col.conn], Source={StaticResource Loc}}" Binding="{Binding ConnCount}" Width="50"
                                                 SortMemberPath="ConnCount" ElementStyle="{StaticResource CellRight}"/>
-                            <DataGridTemplateColumn Header="{Binding [col.blocked], RelativeSource={RelativeSource AncestorType=DataGrid}}" Width="44">
+                            <DataGridTemplateColumn Header="{Binding [col.blocked], Source={StaticResource Loc}}" Width="44">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="🚫" ToolTip="{DynamicResource cm.block}"
@@ -217,7 +235,7 @@
                             <DockPanel>
                                 <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
                                     <Button Content="{DynamicResource btn.block}" Command="{Binding BlockCommand}"
-                                            Background="#3A1D1E" BorderBrush="#63272A"/>
+                                            Background="{DynamicResource BtnDangerBrush}" BorderBrush="{DynamicResource BtnDangerBorderBrush}"/>
                                     <Button Content="{DynamicResource btn.unblock}" Command="{Binding UnblockCommand}" Margin="8,0,0,0"/>
                                     <Button Command="{Binding ToggleTrustCommand}" Margin="8,0,0,0"
                                             ToolTip="{DynamicResource bl.allowTitle}">
@@ -241,29 +259,29 @@
                                             <Image Source="{Binding DetailIcon}" Width="34" Height="34" VerticalAlignment="Center"/>
                                             <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding DetailName}" FontSize="15" FontWeight="Bold"/>
-                                                <TextBlock Text="{Binding DetailCompany}" Foreground="{StaticResource DimBrush}"/>
+                                                <TextBlock Text="{Binding DetailCompany}" Foreground="{DynamicResource DimBrush}"/>
                                             </StackPanel>
                                         </StackPanel>
-                                        <TextBlock Text="{Binding DetailPid}" Foreground="{StaticResource DimBrush}" Margin="0,6,0,0"/>
+                                        <TextBlock Text="{Binding DetailPid}" Foreground="{DynamicResource DimBrush}" Margin="0,6,0,0"/>
                                         <TextBlock Text="{DynamicResource d.path}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailPath}" TextWrapping="Wrap"
-                                                   Foreground="{StaticResource DimBrush}"/>
+                                                   Foreground="{DynamicResource DimBrush}"/>
                                         <TextBlock Text="{DynamicResource d.parent}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailParent}" TextWrapping="Wrap"
-                                                   Foreground="{StaticResource DimBrush}"/>
+                                                   Foreground="{DynamicResource DimBrush}"/>
                                         <TextBlock Text="{DynamicResource d.user}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailUser}" TextWrapping="Wrap"
-                                                   Foreground="{StaticResource DimBrush}"/>
+                                                   Foreground="{DynamicResource DimBrush}"/>
                                         <TextBlock Text="{DynamicResource d.cmdline}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailCmdLine}" TextWrapping="Wrap"
-                                                   Foreground="{StaticResource DimBrush}"
+                                                   Foreground="{DynamicResource DimBrush}"
                                                    ToolTip="{Binding DetailCmdLine}"/>
                                         <TextBlock Text="{DynamicResource d.services}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailServices}" TextWrapping="Wrap"
-                                                   Foreground="{StaticResource DimBrush}"/>
+                                                   Foreground="{DynamicResource DimBrush}"/>
                                         <TextBlock Text="{DynamicResource d.identity}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailIdentity}" TextWrapping="Wrap"
-                                                   Foreground="{StaticResource DimBrush}"/>
+                                                   Foreground="{DynamicResource DimBrush}"/>
                                         <TextBlock Text="{DynamicResource d.signature}" Style="{StaticResource SectionHeader}"/>
                                         <TextBlock Text="{Binding DetailSignature}" Foreground="{Binding DetailSignatureBrush}"/>
                                         <TextBlock Text="{DynamicResource d.verdict}" Style="{StaticResource SectionHeader}"/>
@@ -273,7 +291,7 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,1"
-                                                               Foreground="{StaticResource DimBrush}"/>
+                                                               Foreground="{DynamicResource DimBrush}"/>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
@@ -283,18 +301,18 @@
                                         <DataGrid ItemsSource="{Binding SelectedConns}" MaxHeight="190"
                                                   CanUserSortColumns="False" RowHeight="26">
                                             <DataGrid.Columns>
-                                                <DataGridTextColumn Header="{Binding [col.remote], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Remote}" Width="*"/>
-                                                <DataGridTextColumn Header="{Binding [col.local], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Local}" Width="120"/>
-                                                <DataGridTextColumn Header="{Binding [col.proto], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding ProtoText}" Width="48"/>
-                                                <DataGridTextColumn Header="{Binding [col.state], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding State}" Width="92"/>
-                                                <DataGridTextColumn Header="{Binding [col.scope], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Scope}" Width="62"/>
+                                                <DataGridTextColumn Header="{Binding [col.remote], Source={StaticResource Loc}}" Binding="{Binding Remote}" Width="*"/>
+                                                <DataGridTextColumn Header="{Binding [col.local], Source={StaticResource Loc}}" Binding="{Binding Local}" Width="120"/>
+                                                <DataGridTextColumn Header="{Binding [col.proto], Source={StaticResource Loc}}" Binding="{Binding ProtoText}" Width="48"/>
+                                                <DataGridTextColumn Header="{Binding [col.state], Source={StaticResource Loc}}" Binding="{Binding State}" Width="92"/>
+                                                <DataGridTextColumn Header="{Binding [col.scope], Source={StaticResource Loc}}" Binding="{Binding Scope}" Width="62"/>
                                             </DataGrid.Columns>
                                         </DataGrid>
                                         <TextBlock Text="{DynamicResource d.recentDns}" Style="{StaticResource SectionHeader}"/>
                                         <ItemsControl ItemsSource="{Binding DetailDns}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding}" Foreground="{StaticResource DimBrush}"
+                                                    <TextBlock Text="{Binding}" Foreground="{DynamicResource DimBrush}"
                                                                TextTrimming="CharacterEllipsis" ToolTip="{Binding}"/>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
@@ -304,7 +322,7 @@
                             </DockPanel>
                         </Border>
                         <TextBlock Text="{DynamicResource d.placeholder}"
-                                   Foreground="{StaticResource DimBrush}" FontSize="14"
+                                   Foreground="{DynamicResource DimBrush}" FontSize="14"
                                    HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
@@ -319,27 +337,27 @@
                         </TextBlock>
                     </Grid>
                 </Grid>
-            </TabItem>
+            </Grid>
 
             <!-- ========== 2. 目的地排行 ========== -->
-            <TabItem Header="{DynamicResource tab.destinations}">
+            <Grid x:Name="PageDestinations" Visibility="Collapsed">
                 <DataGrid ItemsSource="{Binding Destinations}" CanUserSortColumns="False">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="{Binding [col.dest], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Display}" Width="2*"/>
-                        <DataGridTextColumn Header="{Binding [col.destScope], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Scope}" Width="70"/>
-                        <DataGridTextColumn Header="{Binding [col.upTotalDest], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding UpText}" Width="100"
+                        <DataGridTextColumn Header="{Binding [col.dest], Source={StaticResource Loc}}" Binding="{Binding Display}" Width="2*"/>
+                        <DataGridTextColumn Header="{Binding [col.destScope], Source={StaticResource Loc}}" Binding="{Binding Scope}" Width="70"/>
+                        <DataGridTextColumn Header="{Binding [col.upTotalDest], Source={StaticResource Loc}}" Binding="{Binding UpText}" Width="100"
                                             ElementStyle="{StaticResource CellRight}"/>
-                        <DataGridTextColumn Header="{Binding [col.downTotalDest], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding DownText}" Width="100"
+                        <DataGridTextColumn Header="{Binding [col.downTotalDest], Source={StaticResource Loc}}" Binding="{Binding DownText}" Width="100"
                                             ElementStyle="{StaticResource CellRight}"/>
-                        <DataGridTextColumn Header="{Binding [col.lastSeen], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding LastText}" Width="90"
+                        <DataGridTextColumn Header="{Binding [col.lastSeen], Source={StaticResource Loc}}" Binding="{Binding LastText}" Width="90"
                                             ElementStyle="{StaticResource CellRight}"/>
-                        <DataGridTextColumn Header="{Binding [col.involved], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding ProcessesText}" Width="*"/>
+                        <DataGridTextColumn Header="{Binding [col.involved], Source={StaticResource Loc}}" Binding="{Binding ProcessesText}" Width="*"/>
                     </DataGrid.Columns>
                 </DataGrid>
-            </TabItem>
+            </Grid>
 
             <!-- ========== 3. DNS 安全 ========== -->
-            <TabItem Header="{DynamicResource tab.dns}">
+            <Grid x:Name="PageDns" Visibility="Collapsed">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -389,11 +407,11 @@
                             <DataGrid ItemsSource="{Binding DnsStream}" RowStyle="{StaticResource AlertRow}"
                                       CanUserSortColumns="False" RowHeight="26">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="{Binding [col.time], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding TimeText}" Width="70"/>
-                                    <DataGridTextColumn Header="{Binding [col.process], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Process}" Width="150"/>
-                                    <DataGridTextColumn Header="{Binding [col.domain], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Domain}" Width="*"/>
-                                    <DataGridTextColumn Header="{Binding [col.result], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Ips}" Width="1.2*"/>
-                                    <DataGridTextColumn Header="{Binding [col.alertNote], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding AlertText}" Width="1.4*">
+                                    <DataGridTextColumn Header="{Binding [col.time], Source={StaticResource Loc}}" Binding="{Binding TimeText}" Width="70"/>
+                                    <DataGridTextColumn Header="{Binding [col.process], Source={StaticResource Loc}}" Binding="{Binding Process}" Width="150"/>
+                                    <DataGridTextColumn Header="{Binding [col.domain], Source={StaticResource Loc}}" Binding="{Binding Domain}" Width="*"/>
+                                    <DataGridTextColumn Header="{Binding [col.result], Source={StaticResource Loc}}" Binding="{Binding Ips}" Width="1.2*"/>
+                                    <DataGridTextColumn Header="{Binding [col.alertNote], Source={StaticResource Loc}}" Binding="{Binding AlertText}" Width="1.4*">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource CellDim}"/>
                                         </DataGridTextColumn.ElementStyle>
@@ -420,15 +438,15 @@
                                         IsEnabled="{Binding DohRunning, Converter={StaticResource InvBool}}"
                                         Margin="10,0,0,0"/>
                             </StackPanel>
-                            <TextBlock Text="{Binding DohStatusText}" Foreground="{StaticResource DimBrush}"
+                            <TextBlock Text="{Binding DohStatusText}" Foreground="{DynamicResource DimBrush}"
                                        TextWrapping="Wrap" Margin="0,6,0,0"/>
                             <DataGrid ItemsSource="{Binding DohResults}" MaxHeight="170" CanUserSortColumns="False"
                                       RowHeight="28" Margin="0,8,0,0">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="{Binding [col.domain], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Domain}" Width="160"/>
-                                    <DataGridTextColumn Header="{Binding [col.localResult], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding LocalIps}" Width="1.1*"/>
-                                    <DataGridTextColumn Header="{Binding [col.refResult], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding RefIps}" Width="1.1*"/>
-                                    <DataGridTemplateColumn Header="{Binding [col.verdict], RelativeSource={RelativeSource AncestorType=DataGrid}}" Width="*">
+                                    <DataGridTextColumn Header="{Binding [col.domain], Source={StaticResource Loc}}" Binding="{Binding Domain}" Width="160"/>
+                                    <DataGridTextColumn Header="{Binding [col.localResult], Source={StaticResource Loc}}" Binding="{Binding LocalIps}" Width="1.1*"/>
+                                    <DataGridTextColumn Header="{Binding [col.refResult], Source={StaticResource Loc}}" Binding="{Binding RefIps}" Width="1.1*"/>
+                                    <DataGridTemplateColumn Header="{Binding [col.verdict], Source={StaticResource Loc}}" Width="*">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Verdict}" Foreground="{Binding VerdictBrush}"
@@ -441,38 +459,38 @@
                         </StackPanel>
                     </Border>
                 </Grid>
-            </TabItem>
+            </Grid>
 
             <!-- ========== 4. 监听端口 ========== -->
-            <TabItem Header="{DynamicResource tab.ports}">
+            <Grid x:Name="PagePorts" Visibility="Collapsed">
                 <DataGrid ItemsSource="{Binding Ports}" CanUserSortColumns="False">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="{Binding [col.proto], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding ProtoText}" Width="55"/>
-                        <DataGridTextColumn Header="{Binding [col.port], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Port}" Width="70"
+                        <DataGridTextColumn Header="{Binding [col.proto], Source={StaticResource Loc}}" Binding="{Binding ProtoText}" Width="55"/>
+                        <DataGridTextColumn Header="{Binding [col.port], Source={StaticResource Loc}}" Binding="{Binding Port}" Width="70"
                                             ElementStyle="{StaticResource CellRight}"/>
-                        <DataGridTextColumn Header="{Binding [col.bind], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Bind}" Width="150"/>
-                        <DataGridTextColumn Header="{Binding [col.exposure], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding BindText}" Width="110"/>
-                        <DataGridTextColumn Header="{Binding [col.pid], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Pid}" Width="60"
+                        <DataGridTextColumn Header="{Binding [col.bind], Source={StaticResource Loc}}" Binding="{Binding Bind}" Width="150"/>
+                        <DataGridTextColumn Header="{Binding [col.exposure], Source={StaticResource Loc}}" Binding="{Binding BindText}" Width="110"/>
+                        <DataGridTextColumn Header="{Binding [col.pid], Source={StaticResource Loc}}" Binding="{Binding Pid}" Width="60"
                                             ElementStyle="{StaticResource CellRight}"/>
-                        <DataGridTextColumn Header="{Binding [col.process], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Process}" Width="*"/>
+                        <DataGridTextColumn Header="{Binding [col.process], Source={StaticResource Loc}}" Binding="{Binding Process}" Width="*"/>
                     </DataGrid.Columns>
                 </DataGrid>
-            </TabItem>
+            </Grid>
 
             <!-- ========== 5. 事件流 ========== -->
-            <TabItem Header="{DynamicResource tab.events}">
+            <Grid x:Name="PageEvents" Visibility="Collapsed">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="{DynamicResource ev.export}" Command="{Binding ExportCommand}"/>
                         <Button Content="{DynamicResource ev.clear}" Command="{Binding ClearEventsCommand}" Margin="8,0,0,0"/>
-                        <Border Background="#33E3A836" CornerRadius="4" Padding="10,4"
+                        <Border Background="{DynamicResource BannerBgBrush}" CornerRadius="4" Padding="10,4"
                                 Margin="14,0,0,0" Visibility="{Binding EventsFilterVisible, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="{Binding EventsFilterText}" Foreground="#F0C674"/>
+                            <TextBlock Text="{Binding EventsFilterText}" Foreground="{DynamicResource BannerTextBrush}"/>
                         </Border>
                         <Button Content="{DynamicResource ev.clearFilter}" Command="{Binding ClearEventsFilterCommand}" Margin="6,0,0,0"
                                 Visibility="{Binding EventsFilterVisible, Converter={StaticResource BoolToVis}}"/>
                         <TextBlock Text="{DynamicResource ev.note}"
-                                   Foreground="{StaticResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                                   Foreground="{DynamicResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
                     </StackPanel>
                     <DataGrid ItemsSource="{Binding Events}" CanUserSortColumns="False">
                         <DataGrid.ContextMenu>
@@ -481,25 +499,25 @@
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="{Binding [col.time], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding TimeText}" Width="70"/>
-                            <DataGridTemplateColumn Header="{Binding [col.kind], RelativeSource={RelativeSource AncestorType=DataGrid}}" Width="105">
+                            <DataGridTextColumn Header="{Binding [col.time], Source={StaticResource Loc}}" Binding="{Binding TimeText}" Width="70"/>
+                            <DataGridTemplateColumn Header="{Binding [col.kind], Source={StaticResource Loc}}" Width="105">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding KindText}" Foreground="{Binding KindBrush}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="{Binding [col.process], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Process}" Width="170"/>
-                            <DataGridTextColumn Header="{Binding [col.target], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Detail}" Width="*"/>
-                            <DataGridTextColumn Header="{Binding [col.bytes], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding BytesText}" Width="90"
+                            <DataGridTextColumn Header="{Binding [col.process], Source={StaticResource Loc}}" Binding="{Binding Process}" Width="170"/>
+                            <DataGridTextColumn Header="{Binding [col.target], Source={StaticResource Loc}}" Binding="{Binding Detail}" Width="*"/>
+                            <DataGridTextColumn Header="{Binding [col.bytes], Source={StaticResource Loc}}" Binding="{Binding BytesText}" Width="90"
                                                 ElementStyle="{StaticResource CellRight}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
-            </TabItem>
+            </Grid>
 
             <!-- ========== 6. 拦截名单 ========== -->
-            <TabItem Header="{DynamicResource tab.blocklist}">
+            <Grid x:Name="PageBlocking" Visibility="Collapsed">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -510,21 +528,21 @@
                         <Button Content="{DynamicResource bl.unblockSel}" Command="{Binding UnblockAppCommand}"/>
                         <Button Content="{DynamicResource bl.refresh}" Command="{Binding RefreshBlockedCommand}" Margin="8,0,0,0"/>
                         <TextBlock Text="{DynamicResource bl.note}"
-                                   Foreground="{StaticResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                                   Foreground="{DynamicResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
                     </StackPanel>
                     <DataGrid Grid.Row="1" ItemsSource="{Binding BlockedApps}" CanUserSortColumns="False"
                               SelectedItem="{Binding SelectedBlocked}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="{Binding [col.app], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding DisplayName}" Width="240"/>
-                            <DataGridTextColumn Header="{Binding [col.path], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Path}" Width="*"/>
-                            <DataGridTextColumn Header="{Binding [col.rules], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding RulesText}" Width="90"/>
+                            <DataGridTextColumn Header="{Binding [col.app], Source={StaticResource Loc}}" Binding="{Binding DisplayName}" Width="240"/>
+                            <DataGridTextColumn Header="{Binding [col.path], Source={StaticResource Loc}}" Binding="{Binding Path}" Width="*"/>
+                            <DataGridTextColumn Header="{Binding [col.rules], Source={StaticResource Loc}}" Binding="{Binding RulesText}" Width="90"/>
                         </DataGrid.Columns>
                     </DataGrid>
                     <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,8,0,0">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
                                 <TextBlock Text="{DynamicResource bl.allowTitle}"
-                                           Foreground="{StaticResource DimBrush}" VerticalAlignment="Center"/>
+                                           Foreground="{DynamicResource DimBrush}" VerticalAlignment="Center"/>
                                 <Button Content="{DynamicResource bl.removeSel}" Command="{Binding RemoveTrustedCommand}" Margin="14,0,0,0"/>
                             </StackPanel>
                             <ListBox ItemsSource="{Binding TrustedApps}" SelectedItem="{Binding SelectedTrustedApp}"
@@ -532,10 +550,10 @@
                         </DockPanel>
                     </Border>
                 </Grid>
-            </TabItem>
+            </Grid>
 
             <!-- ========== 7. 网络配置 ========== -->
-            <TabItem Header="{DynamicResource tab.network}">
+            <Grid x:Name="PageNetwork" Visibility="Collapsed">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -545,11 +563,11 @@
 
                     <DataGrid Grid.Row="0" ItemsSource="{Binding Adapters}" CanUserSortColumns="False" MaxHeight="190">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="{Binding [col.adapter], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Name}" Width="170"/>
-                            <DataGridTextColumn Header="{Binding [col.status], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Status}" Width="70"/>
-                            <DataGridTextColumn Header="{Binding [col.ips], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding IpsText}" Width="1.2*"/>
-                            <DataGridTextColumn Header="{Binding [col.gateway], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding GwText}" Width="*"/>
-                            <DataGridTextColumn Header="{Binding [col.dns], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding DnsText}" Width="1.2*"/>
+                            <DataGridTextColumn Header="{Binding [col.adapter], Source={StaticResource Loc}}" Binding="{Binding Name}" Width="170"/>
+                            <DataGridTextColumn Header="{Binding [col.status], Source={StaticResource Loc}}" Binding="{Binding Status}" Width="70"/>
+                            <DataGridTextColumn Header="{Binding [col.ips], Source={StaticResource Loc}}" Binding="{Binding IpsText}" Width="1.2*"/>
+                            <DataGridTextColumn Header="{Binding [col.gateway], Source={StaticResource Loc}}" Binding="{Binding GwText}" Width="*"/>
+                            <DataGridTextColumn Header="{Binding [col.dns], Source={StaticResource Loc}}" Binding="{Binding DnsText}" Width="1.2*"/>
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -562,7 +580,7 @@
                             <StackPanel>
                                 <TextBlock Text="{DynamicResource cfg.proxy}" Style="{StaticResource SectionHeader}"/>
                                 <TextBlock Text="{Binding ProxyText}" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding WinHttpText}" TextWrapping="Wrap" Foreground="{StaticResource DimBrush}"/>
+                                <TextBlock Text="{Binding WinHttpText}" TextWrapping="Wrap" Foreground="{DynamicResource DimBrush}"/>
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="1" Style="{StaticResource Card}" Margin="6,0,0,0">
@@ -580,19 +598,19 @@
                             <DataGrid ItemsSource="{Binding ConfigHistory}" RowStyle="{StaticResource SeriousRow}"
                                       CanUserSortColumns="False" RowHeight="26">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="{Binding [col.time], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding TimeText}" Width="130"/>
-                                    <DataGridTextColumn Header="{Binding [col.what], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding What}" Width="140"/>
-                                    <DataGridTextColumn Header="{Binding [col.old], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Old}" Width="*"/>
-                                    <DataGridTextColumn Header="{Binding [col.new], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding New}" Width="*"/>
+                                    <DataGridTextColumn Header="{Binding [col.time], Source={StaticResource Loc}}" Binding="{Binding TimeText}" Width="130"/>
+                                    <DataGridTextColumn Header="{Binding [col.what], Source={StaticResource Loc}}" Binding="{Binding What}" Width="140"/>
+                                    <DataGridTextColumn Header="{Binding [col.old], Source={StaticResource Loc}}" Binding="{Binding Old}" Width="*"/>
+                                    <DataGridTextColumn Header="{Binding [col.new], Source={StaticResource Loc}}" Binding="{Binding New}" Width="*"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </DockPanel>
                     </Border>
                 </Grid>
-            </TabItem>
+            </Grid>
 
             <!-- ========== 8. 设置 ========== -->
-            <TabItem Header="{DynamicResource tab.settings}">
+            <Grid x:Name="PageSettings" Visibility="Collapsed">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <Border Style="{StaticResource Card}" Margin="0,0,0,8">
@@ -604,7 +622,13 @@
                                         <ComboBoxItem Content="中文" Tag="zh"/>
                                         <ComboBoxItem Content="English" Tag="en"/>
                                     </ComboBox>
-                                    <TextBlock Text="NetWatch v1.0.1" Foreground="{StaticResource DimBrush}"
+                                    <TextBlock Text="{DynamicResource set.theme}" VerticalAlignment="Center" Margin="18,0,0,0"/>
+                                    <ComboBox x:Name="CbTheme" MinWidth="120" SelectionChanged="OnThemeChanged" Margin="6,0,0,0">
+                                        <ComboBoxItem Content="{DynamicResource set.themeAuto}" Tag="auto"/>
+                                        <ComboBoxItem Content="{DynamicResource set.themeDark}" Tag="dark"/>
+                                        <ComboBoxItem Content="{DynamicResource set.themeLight}" Tag="light"/>
+                                    </ComboBox>
+                                    <TextBlock Text="{Binding AppVersion}" Foreground="{StaticResource DimBrush}"
                                                VerticalAlignment="Center" Margin="18,0,0,0"/>
                                 </StackPanel>
                             </StackPanel>
@@ -643,22 +667,23 @@
                                               Margin="18,0,0,0" VerticalAlignment="Center"
                                               ToolTip="{DynamicResource cfg.pauseBaseline}"/>
                                     <Button Content="{DynamicResource cfg.cleanNow}" Click="OnCleanupNow" Margin="18,0,0,0"/>
-                                    <TextBlock Text="{Binding StorageInfo}" Foreground="{StaticResource DimBrush}"
+                                    <TextBlock Text="{Binding StorageInfo}" Foreground="{DynamicResource DimBrush}"
                                                VerticalAlignment="Center" Margin="14,0,0,0"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <TextBlock Text="{Binding AuditStatusText}" Foreground="{StaticResource DimBrush}"
+                                    <TextBlock Text="{Binding AuditStatusText}" Foreground="{DynamicResource DimBrush}"
                                                VerticalAlignment="Center"/>
                                     <Button Content="{DynamicResource cfg.enableAudit}" Click="OnEnableAudit" Margin="12,0,0,0"
                                             ToolTip="{DynamicResource cfg.auditOn}"/>
-                                    <TextBlock Text="{Binding SysmonStatusText}" Foreground="{StaticResource DimBrush}"
+                                    <TextBlock Text="{Binding SysmonStatusText}" Foreground="{DynamicResource DimBrush}"
                                                VerticalAlignment="Center" Margin="20,0,0,0"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
-            </TabItem>
-        </TabControl>
+            </Grid>
+            </Grid>
+        </Grid>
     </DockPanel>
 </Window>

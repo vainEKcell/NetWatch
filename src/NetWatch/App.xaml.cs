@@ -19,8 +19,10 @@ public partial class App : Application
             return;
         }
 
-        // 语言在 MainWindow 加载前应用，避免闪烁
-        L10n.Apply(AppSettings.Load().Language);
+        // 语言与主题在 MainWindow 加载前应用，避免闪烁
+        var settings = AppSettings.Load();
+        L10n.Apply(settings.Language);
+        ThemeService.Apply(settings.Theme);
 
         DispatcherUnhandledException += (_, args) =>
         {

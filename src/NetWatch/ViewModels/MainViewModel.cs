@@ -99,6 +99,21 @@ public sealed class MainViewModel : VmBase, IDisposable
         }
     }
 
+    public string AppVersion =>
+        "NetWatch v" + (System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1.1");
+
+    public string Theme
+    {
+        get => Settings.Theme;
+        set
+        {
+            if (Settings.Theme == value) return;
+            Settings.Theme = value;
+            Settings.Save();
+            ThemeService.Apply(value);
+        }
+    }
+
     public MainViewModel()
     {
         Baseline = new BaselineStore(Settings);
@@ -466,6 +481,7 @@ public sealed class MainViewModel : VmBase, IDisposable
             if (_tickCount % 8 == 0) FlushBaseline();
             if (_tickCount % 1800 == 500) _ = Task.Run(() => RunRetentionCleanup(false));
             if (_tickCount % 30 == 10) UpdateStorageInfo();
+            if (_tickCount % 30 == 20 && Settings.Theme == "auto") ThemeService.Apply("auto"); // 跟随系统主题的周期校准
             if (_blockedConnCount > 0)
             {
                 BlockedConnCountText = $"防火墙拦截 {_blockedConnCount} 条";
@@ -1063,8 +1079,8 @@ public sealed class MainViewModel : VmBase, IDisposable
         if (flagged > 0 || alerts > 0)
         {
             var parts = new List<string>();
-            if (flagged > 0) parts.Add(L10n.T("banner.flagged", flagged));
-            if (alerts > 0) parts.Add(L10n.T("banner.dns", alerts));
+            if (flagged > 0) parts.Add(L10n.T(flagged == 1 ? "banner.flagged1" : "banner.flagged", flagged));
+            if (alerts > 0) parts.Add(L10n.T(alerts == 1 ? "banner.dns1" : "banner.dns", alerts));
             BannerText = "⚠ " + string.Join("；", parts);
             BannerVisible = true;
         }

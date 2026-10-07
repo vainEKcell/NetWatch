@@ -12,14 +12,28 @@ public partial class MainWindow : Window
     private readonly MainViewModel _vm;
     private readonly TaskbarIcon _tray = new();
 
+    private FrameworkElement[]? _pages;
+
     public MainWindow()
     {
         InitializeComponent();
         _vm = new MainViewModel();
         DataContext = _vm;
         _vm.ChartPush += (u, d) => Chart.Push(u, d);
-        _vm.NavigateToEventsRequested += () => MainTabs.SelectedIndex = 4; // 事件流
+        _vm.NavigateToEventsRequested += () => Nav.SelectedIndex = 4; // 事件流
+        _pages = new FrameworkElement[]
+        {
+            PageOverview, PageDestinations, PageDns, PagePorts,
+            PageEvents, PageBlocking, PageNetwork, PageSettings,
+        };
         InitTray();
+    }
+
+    private void OnNavChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_pages == null || Nav.SelectedItem == null) return;
+        for (int i = 0; i < _pages.Length; i++)
+            _pages[i].Visibility = i == Nav.SelectedIndex ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void InitTray()
@@ -107,6 +121,7 @@ public partial class MainWindow : Window
         base.OnSourceInitialized(e);
         // 按已保存设置回填下拉框（XAML 解析期的默认选中已被 _vm==null 守卫忽略）
         SetCombo(CbLanguage, _vm.Settings.Language);
+        SetCombo(CbTheme, _vm.Settings.Theme);
         SetCombo(CbBaselineDays, _vm.Settings.BaselineRetentionDays);
         SetCombo(CbEvidenceDays, _vm.Settings.EvidenceRetentionDays);
         SetCombo(CbEvidenceCap, _vm.Settings.EvidenceMaxSizeMB);
@@ -163,5 +178,12 @@ public partial class MainWindow : Window
         if (_vm == null) return; // XAML 解析期默认选中会触发
         if ((sender as ComboBox)?.SelectedItem is ComboBoxItem it && it.Tag is string s)
             _vm.Language = s;
+    }
+
+    private void OnThemeChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm == null) return;
+        if ((sender as ComboBox)?.SelectedItem is ComboBoxItem it && it.Tag is string s)
+            _vm.Theme = s;
     }
 }

@@ -156,6 +156,14 @@
     <sys:String x:Key="cfg.sysmonOff">Sysmon: not installed (optional, no impact)</sys:String>
     <sys:String x:Key="set.language">Language</sys:String>
     <sys:String x:Key="set.langAuto">Follow system</sys:String>
+    <sys:String x:Key="set.theme">Theme</sys:String>
+    <sys:String x:Key="set.themeAuto">Follow system</sys:String>
+    <sys:String x:Key="set.themeDark">Dark</sys:String>
+    <sys:String x:Key="set.themeLight">Light</sys:String>
+    <sys:String x:Key="chart.peak">Peak {0}</sys:String>
+    <sys:String x:Key="banner.flagged1">{0} process shows noteworthy behavior (see colored rows and detail panel; hint ≠ confirmed)</sys:String>
+    <sys:String x:Key="banner.dns1">{0} DNS/config hint (see DNS Safety page and Events)</sys:String>
+    <sys:String x:Key="eng.attentionSummary1">Noteworthy feature present ({0} evidence item) — expand the evidence chain and check destinations</sys:String>
     <sys:String x:Key="set.about">About</sys:String>
 
     <sys:String x:Key="st.running">● Live monitoring · {0:N0} events</sys:String>

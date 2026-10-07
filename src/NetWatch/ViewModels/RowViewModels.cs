@@ -17,13 +17,7 @@ public abstract class VmBase : System.ComponentModel.INotifyPropertyChanged
 
 internal static class UiBrushes
 {
-    private static SolidColorBrush B(byte r, byte g, byte b)
-    {
-        var sb = new SolidColorBrush(Color.FromRgb(r, g, b));
-        sb.Freeze();
-        return sb;
-    }
-
+    // 共享可变画刷：主题切换时由 UiBrushes.Refresh 原地改色，绑定引用自动更新
     public static readonly SolidColorBrush Green = B(0x4C, 0xC8, 0x78);
     public static readonly SolidColorBrush Blue = B(0x46, 0xA0, 0xFF);
     public static readonly SolidColorBrush Amber = B(0xE3, 0xA8, 0x36);
@@ -31,6 +25,38 @@ internal static class UiBrushes
     public static readonly SolidColorBrush Dim = B(0x8B, 0x95, 0xA7);
     public static readonly SolidColorBrush Faint = B(0x3D, 0x47, 0x59);
     public static readonly SolidColorBrush Fg = B(0xD8, 0xDE, 0xE9);
+
+    private static SolidColorBrush B(byte r, byte g, byte b)
+    {
+        var sb = new SolidColorBrush(Color.FromRgb(r, g, b));
+        return sb; // 不冻结：允许主题刷新改色
+    }
+
+    private static readonly (SolidColorBrush, Color)[][] Themes =
+    {
+        // dark
+        new[]
+        {
+            (Green, Color.FromRgb(0x4C, 0xC8, 0x78)), (Blue, Color.FromRgb(0x46, 0xA0, 0xFF)),
+            (Amber, Color.FromRgb(0xE3, 0xA8, 0x36)), (Red, Color.FromRgb(0xE5, 0x53, 0x4B)),
+            (Dim, Color.FromRgb(0x8B, 0x95, 0xA7)), (Faint, Color.FromRgb(0x3D, 0x47, 0x59)),
+            (Fg, Color.FromRgb(0xD8, 0xDE, 0xE9)),
+        },
+        // light
+        new[]
+        {
+            (Green, Color.FromRgb(0x17, 0x8A, 0x4C)), (Blue, Color.FromRgb(0x1F, 0x6F, 0xD6)),
+            (Amber, Color.FromRgb(0xB5, 0x73, 0x0E)), (Red, Color.FromRgb(0xCC, 0x3D, 0x36)),
+            (Dim, Color.FromRgb(0x5C, 0x67, 0x79)), (Faint, Color.FromRgb(0xA6, 0xAD, 0xBD)),
+            (Fg, Color.FromRgb(0x1C, 0x25, 0x30)),
+        },
+    };
+
+    public static void Refresh(string theme)
+    {
+        var table = theme == "light" ? Themes[1] : Themes[0];
+        foreach (var (brush, color) in table) brush.Color = color;
+    }
 
     public static SolidColorBrush Risk(RiskLevel lv) => lv switch
     {

@@ -115,7 +115,7 @@ public static class AnalysisEngine
         else if (total >= 2 || mid >= 1)
         {
             v.Status = VerdictStatus.Attention;
-            v.Summary = L10n.T("eng.attentionSummary", v.Evidence.Count);
+            v.Summary = L10n.T(v.Evidence.Count == 1 ? "eng.attentionSummary1" : "eng.attentionSummary", v.Evidence.Count);
         }
         else if (v.Evidence.Count == 0 && e.Signature == SignatureState.Valid && !inSuspiciousDir)
         {

@@ -28,6 +28,7 @@ public static class L10n
             if (md[i].Source != null && md[i].Source!.OriginalString.Contains("Strings."))
                 md.RemoveAt(i);
         md.Add(new ResourceDictionary { Source = uri });
+        Loc.Instance.Refresh();
     }
 
     /// 取词；带参数时按 string.Format 填充

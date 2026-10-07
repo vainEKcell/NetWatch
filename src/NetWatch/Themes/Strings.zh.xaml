@@ -156,6 +156,14 @@
     <sys:String x:Key="cfg.sysmonOff">Sysmon：未安装（可选增强，不影响功能）</sys:String>
     <sys:String x:Key="set.language">界面语言</sys:String>
     <sys:String x:Key="set.langAuto">跟随系统</sys:String>
+    <sys:String x:Key="set.theme">界面主题</sys:String>
+    <sys:String x:Key="set.themeAuto">跟随系统</sys:String>
+    <sys:String x:Key="set.themeDark">深色</sys:String>
+    <sys:String x:Key="set.themeLight">浅色</sys:String>
+    <sys:String x:Key="chart.peak">峰值 {0}</sys:String>
+    <sys:String x:Key="banner.flagged1">{0} 个进程存在值得关注的行为（详见总览标色与详情面板，提示 ≠ 确诊）</sys:String>
+    <sys:String x:Key="banner.dns1">{0} 条 DNS/配置提示（见 DNS 安全页与事件流）</sys:String>
+    <sys:String x:Key="eng.attentionSummary1">存在值得关注的特征（{0} 项证据）——请展开证据链并结合目的地判断</sys:String>
     <sys:String x:Key="set.about">关于</sys:String>
 
     <sys:String x:Key="st.running">● 实时监控中 · 事件 {0:N0}</sys:String>

@@ -10,7 +10,7 @@
     <AssemblyName>NetWatch</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    <Version>1.0.1</Version>
+    <Version>0.1.1</Version>
     <Product>NetWatch</Product>
     <Description>每进程网络流量实时监控与 DNS 劫持检测分析台</Description>
     <DebugType>embedded</DebugType>
