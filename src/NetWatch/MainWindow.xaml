@@ -527,6 +527,8 @@
                                 <StackPanel>
                                     <TextBlock Text="{DynamicResource ncv.nat}" Style="{StaticResource SectionHeader}"/>
                                     <TextBlock Text="{Binding NatText}" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding NatNoteText}" FontSize="11"
+                                               Foreground="{DynamicResource DimBrush}" TextWrapping="Wrap" Margin="0,3,0,0"/>
                                     <TextBlock Text="{DynamicResource ncv.external}" Style="{StaticResource SectionHeader}"/>
                                     <TextBlock Text="{Binding NatExternal}" Foreground="{DynamicResource DimBrush}"/>
                                 </StackPanel>
@@ -535,6 +537,11 @@
                                 <StackPanel>
                                     <TextBlock Text="{DynamicResource ncv.link}" Style="{StaticResource SectionHeader}"/>
                                     <TextBlock Text="{Binding LinkTypeText}" FontSize="16" FontWeight="Bold"/>
+                                    <TextBlock Text="{DynamicResource ncv.wifi.signal}" Style="{StaticResource SectionHeader}"/>
+                                    <TextBlock Text="{Binding WifiSignalText}" Foreground="{DynamicResource DimBrush}"/>
+                                    <TextBlock Text="{DynamicResource ncv.wifi.ssid}" Style="{StaticResource SectionHeader}"/>
+                                    <TextBlock Text="{Binding WifiSsidText}" Foreground="{DynamicResource DimBrush}"
+                                               TextTrimming="CharacterEllipsis" ToolTip="{Binding WifiSsidText}"/>
                                     <TextBlock Text="{DynamicResource ncv.linkspeed}" Style="{StaticResource SectionHeader}"/>
                                     <TextBlock Text="{Binding LinkSpeedText}" Foreground="{DynamicResource DimBrush}"/>
                                     <TextBlock Text="{DynamicResource ncv.mtu}" Style="{StaticResource SectionHeader}"/>
@@ -576,14 +583,25 @@
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <TextBlock Text="{DynamicResource ncv.verdict}" Style="{StaticResource SectionHeader}"/>
-                                <TextBlock Text="{Binding CheckVerdictText}" Foreground="{Binding CheckVerdictBrush}"
-                                           FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
+                                <ItemsControl ItemsSource="{Binding ScenarioRows}" Margin="0,2,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="0,3">
+                                                <TextBlock Text="{Binding Name}" Width="180" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Verdict}" Foreground="{Binding Brush}"
+                                                           FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="{DynamicResource ncv.peak}" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{Binding PeakText}" Foreground="{DynamicResource DimBrush}"/>
                                 <TextBlock Text="{DynamicResource ncv.advise}" Style="{StaticResource SectionHeader}"/>
                                 <ItemsControl ItemsSource="{Binding CheckAdvices}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2"
-                                                       Foreground="{StaticResource DimBrush}"/>
+                                                       Foreground="{DynamicResource DimBrush}"/>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>

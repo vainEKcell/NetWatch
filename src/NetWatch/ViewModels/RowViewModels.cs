@@ -378,6 +378,13 @@ public sealed class DohResultVM : VmBase
     }
 }
 
+public sealed class ScenarioRowVM
+{
+    public string Name { get; init; } = "";
+    public string Verdict { get; init; } = "";
+    public SolidColorBrush Brush { get; init; } = UiBrushes.Fg;
+}
+
 public sealed class PingRowVM : VmBase
 {
     public string Target { get; private set; } = "";

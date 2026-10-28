@@ -715,11 +715,31 @@ public sealed class MainViewModel : VmBase, IDisposable
     public string LinkTypeText { get; private set; } = "";
     public string LinkSpeedText { get; private set; } = "";
     public string MtuText { get; private set; } = "—";
+    public string WifiSignalText { get; private set; } = "";
+    public string WifiSsidText { get; private set; } = "";
+    public string NatNoteText { get; private set; } = "";
+    public string PeakText { get; private set; } = "";
+    public ObservableCollection<ScenarioRowVM> ScenarioRows { get; } = new();
     public string CheckVerdictText { get; private set; } = "";
     public SolidColorBrush CheckVerdictBrush { get; private set; } = UiBrushes.Dim;
     public RelayCommand NetworkCheckCommand { get; private set; } = null!;
 
     private CancellationTokenSource? _checkCts;
+    private double _peakUp, _peakDown;
+
+    private static ScenarioRowVM ScenarioRow(string name, int score, bool unknown)
+    {
+        var (text, brush) = unknown
+            ? (L10n.T("ncv.v.unknown"), UiBrushes.Dim)
+            : score switch
+            {
+                0 => (L10n.T("ncv.v.excellent"), UiBrushes.Green),
+                1 => (L10n.T("ncv.v.good"), UiBrushes.Green),
+                2 => (L10n.T("ncv.v.fair"), UiBrushes.Amber),
+                _ => (L10n.T("ncv.v.poor"), UiBrushes.Red),
+            };
+        return new ScenarioRowVM { Name = name, Verdict = text, Brush = brush };
+    }
 
     public async Task RunNetworkCheckAsync()
     {
@@ -728,10 +748,12 @@ public sealed class MainViewModel : VmBase, IDisposable
         var ct = _checkCts.Token;
         CheckRunning = true;
         NatText = "…"; NatExternal = ""; NatDetailText = ""; LinkTypeText = "";
+        NatNoteText = ""; WifiSignalText = ""; WifiSsidText = "";
         CheckVerdictText = L10n.T("ncv.running"); CheckVerdictBrush = UiBrushes.Dim;
-        CheckAdvices.Clear(); PingRows.Clear();
+        CheckAdvices.Clear(); PingRows.Clear(); ScenarioRows.Clear();
         RaiseAll(nameof(CheckRunning), nameof(CheckProgressText), nameof(NatText), nameof(NatExternal),
-            nameof(NatDetailText), nameof(LinkTypeText), nameof(CheckVerdictText), nameof(CheckVerdictBrush));
+            nameof(NatDetailText), nameof(LinkTypeText), nameof(CheckVerdictText), nameof(CheckVerdictBrush),
+            nameof(NatNoteText), nameof(WifiSignalText), nameof(WifiSsidText));
 
         try
         {
@@ -742,7 +764,14 @@ public sealed class MainViewModel : VmBase, IDisposable
             NatText = nat.Classification;
             NatExternal = string.IsNullOrEmpty(nat.ExternalIp) ? "—" : nat.ExternalIp;
             NatDetailText = string.Join("\n", nat.Attempts.Select(a => $"• {a.Server} → {a.MappedIp}:{a.MappedPort}"));
-            RaiseAll(nameof(NatText), nameof(NatExternal), nameof(NatDetailText));
+            NatNoteText = nat.Classification switch
+            {
+                var c when c == L10n.T("ncv.nat.direct") => L10n.T("ncv.nat.note.direct"),
+                var c when c == L10n.T("ncv.nat.cone") => L10n.T("ncv.nat.note.cone"),
+                var c when c == L10n.T("ncv.nat.symmetric") => L10n.T("ncv.nat.note.symmetric"),
+                _ => "",
+            };
+            RaiseAll(nameof(NatText), nameof(NatExternal), nameof(NatDetailText), nameof(NatNoteText));
 
             // 2) 连接方式（Wi-Fi / 有线）
             var nic = NetworkInterface.GetAllNetworkInterfaces()
@@ -751,7 +780,10 @@ public sealed class MainViewModel : VmBase, IDisposable
             var isWifi = nic?.NetworkInterfaceType == NetworkInterfaceType.Wireless80211;
             LinkTypeText = isWifi ? L10n.T("ncv.wifi") : L10n.T("ncv.eth");
             LinkSpeedText = nic == null ? "—" : FormatLinkSpeed(nic.Speed);
-            RaiseAll(nameof(LinkTypeText), nameof(LinkSpeedText));
+            var wifi = isWifi ? WifiProbe.GetConnectedWifi() : null;
+            WifiSignalText = wifi == null ? "—" : $"{wifi.SignalPct}%";
+            WifiSsidText = wifi == null ? "—" : wifi.Ssid;
+            RaiseAll(nameof(LinkTypeText), nameof(LinkSpeedText), nameof(WifiSignalText), nameof(WifiSsidText));
 
             // 3) 延迟/抖动/丢包：网关（若有）+ 两个公网参考点
             CheckProgressText = "";
@@ -794,6 +826,21 @@ public sealed class MainViewModel : VmBase, IDisposable
             if (worstAvg >= 80) advices.Add(L10n.T("ncv.advise.latency"));
             if (worstJitter >= 15) advices.Add(L10n.T("ncv.advise.jitter"));
             if (worstLoss >= 2) advices.Add(L10n.T("ncv.advise.loss"));
+
+            // 分场景评价：不同场景对指标的敏感度不同
+            bool natUnknown = nat.Classification == L10n.T("ncv.nat.fail")
+                || nat.Classification == L10n.T("ncv.nat.insufficient");
+            int gaming = natUnknown ? -1 : Math.Max(natScore, Math.Max(jitterScore, Math.Max(lossScore, latencyScore)));
+            int meeting = Math.Max(jitterScore, Math.Max(lossScore, latencyScore));
+            int streaming = Math.Max(lossScore, latencyScore);
+            int browsing = worstLoss >= 5 || worstAvg >= 150 ? 2 : worstLoss >= 2 || worstAvg >= 80 ? 1 : 0;
+
+            ScenarioRows.Clear();
+            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.gaming"), gaming, natUnknown));
+            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.meeting"), meeting, false));
+            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.streaming"), streaming, false));
+            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.browsing"), browsing, false));
+            Raise(nameof(ScenarioRows));
 
             // 路径 MTU（PPPoE/VPN 环境会明显低于 1500）
             CheckProgressText = L10n.T("ncv.checking.mtu");
@@ -1245,6 +1292,9 @@ public sealed class MainViewModel : VmBase, IDisposable
         }
         TotalUpText = Util.FormatSpeed(upNow);
         TotalDownText = Util.FormatSpeed(downNow);
+        if (upNow > _peakUp) _peakUp = upNow;
+        if (downNow > _peakDown) _peakDown = downNow;
+        PeakText = L10n.T("ncv.peak.text", Util.FormatSpeed(_peakUp), Util.FormatSpeed(_peakDown));
         SessionText = $"↑ {Util.FormatBytes(upAll)}　↓ {Util.FormatBytes(downAll)}";
         TrayText = $"↑ {Util.FormatSpeed(upNow)}   ↓ {Util.FormatSpeed(downNow)}";
         ConnCountText = L10n.T("st.connCount", _latestConns.Count(c => HideLoopback || !c.IsLoopback));
