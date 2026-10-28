@@ -20,10 +20,10 @@ public partial class MainWindow : Window
         _vm = new MainViewModel();
         DataContext = _vm;
         _vm.ChartPush += (u, d) => Chart.Push(u, d);
-        _vm.NavigateToEventsRequested += () => Nav.SelectedIndex = 4; // 事件流
+        _vm.NavigateToEventsRequested += () => Nav.SelectedIndex = 5; // 事件流（网络体检页插入后顺延）
         _pages = new FrameworkElement[]
         {
-            PageOverview, PageDestinations, PageDns, PagePorts,
+            PageOverview, PageDestinations, PageDns, PageNetCheck, PagePorts,
             PageEvents, PageBlocking, PageNetwork, PageSettings,
         };
         InitTray();

@@ -165,6 +165,7 @@
                 <ListBoxItem Content="{DynamicResource tab.overview}" IsSelected="True"/>
                 <ListBoxItem Content="{DynamicResource tab.destinations}"/>
                 <ListBoxItem Content="{DynamicResource tab.dns}"/>
+                <ListBoxItem Content="{DynamicResource tab.netcheck}"/>
                 <ListBoxItem Content="{DynamicResource tab.ports}"/>
                 <ListBoxItem Content="{DynamicResource tab.events}"/>
                 <ListBoxItem Content="{DynamicResource tab.blocklist}"/>
@@ -494,7 +495,86 @@
                 </Grid>
             </Grid>
 
-            <!-- ========== 4. 监听端口 ========== -->
+            <!-- ========== 4. 网络体检 ========== -->
+            <Grid x:Name="PageNetCheck" Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,8">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="{DynamicResource ncv.run}" Command="{Binding NetworkCheckCommand}"
+                                            IsEnabled="{Binding CheckRunning, Converter={StaticResource InvBool}}"/>
+                                    <TextBlock Text="{Binding CheckProgressText}" Foreground="{StaticResource DimBrush}"
+                                               VerticalAlignment="Center" Margin="14,0,0,0"/>
+                                </StackPanel>
+                                <TextBlock Text="{DynamicResource ncv.note}" Foreground="{StaticResource DimBrush}"
+                                           TextWrapping="Wrap" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,6,0">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource ncv.nat}" Style="{StaticResource SectionHeader}"/>
+                                    <TextBlock Text="{Binding NatText}" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{DynamicResource ncv.external}" Style="{StaticResource SectionHeader}"/>
+                                    <TextBlock Text="{Binding NatExternal}" Foreground="{DynamicResource DimBrush}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="1" Style="{StaticResource Card}" Margin="6,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource ncv.link}" Style="{StaticResource SectionHeader}"/>
+                                    <TextBlock Text="{Binding LinkTypeText}" FontSize="16" FontWeight="Bold"/>
+                                    <TextBlock Text="{DynamicResource ncv.nat.detail}" Style="{StaticResource SectionHeader}"/>
+                                    <TextBlock Text="{Binding NatDetailText}" Foreground="{StaticResource DimBrush}"
+                                               TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,8">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}"
+                                           Text="{DynamicResource ncv.ping}"/>
+                                <DataGrid ItemsSource="{Binding PingRows}" CanUserSortColumns="False" RowHeight="28">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="{Binding [col.pingTarget], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Target}" Width="1.4*"/>
+                                        <DataGridTextColumn Header="{Binding [col.min], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding MinText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.avg], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding AvgText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.max], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding MaxText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.jitter], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding JitterText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.loss], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding LossText}" Width="*"
+                                                            ElementStyle="{StaticResource CellRight}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource ncv.verdict}" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{Binding CheckVerdictText}" Foreground="{Binding CheckVerdictBrush}"
+                                           FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
+                                <TextBlock Text="{DynamicResource ncv.advise}" Style="{StaticResource SectionHeader}"/>
+                                <ItemsControl ItemsSource="{Binding CheckAdvices}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2"
+                                                       Foreground="{StaticResource DimBrush}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- ========== 5. 监听端口 ========== -->
             <Grid x:Name="PagePorts" Visibility="Collapsed">
                 <DataGrid ItemsSource="{Binding Ports}" CanUserSortColumns="False">
                     <DataGrid.Columns>

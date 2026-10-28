@@ -374,6 +374,32 @@ public sealed class DohResultVM : VmBase
     }
 }
 
+public sealed class PingRowVM : VmBase
+{
+    public string Target { get; private set; } = "";
+    public string MinText { get; private set; } = "";
+    public string AvgText { get; private set; } = "";
+    public string MaxText { get; private set; } = "";
+    public string JitterText { get; private set; } = "";
+    public string LossText { get; private set; } = "";
+    public SolidColorBrush Brush { get; private set; } = UiBrushes.Fg;
+
+    public void Update(PingProbeResult r)
+    {
+        Target = r.Target;
+        MinText = $"{r.MinMs:F1} ms";
+        AvgText = $"{r.AvgMs:F1} ms";
+        MaxText = $"{r.MaxMs:F1} ms";
+        JitterText = $"{r.JitterMs:F1} ms";
+        LossText = $"{r.LossPct:F1}%";
+        Brush = r.LossPct >= 2 || r.AvgMs >= 80 ? UiBrushes.Amber
+              : r.LossPct > 0 || r.AvgMs >= 40 ? UiBrushes.Fg
+              : UiBrushes.Green;
+        RaiseAll(nameof(Target), nameof(MinText), nameof(AvgText), nameof(MaxText),
+            nameof(JitterText), nameof(LossText), nameof(Brush));
+    }
+}
+
 public sealed class AdapterRowVM : VmBase
 {
     public string Name { get; private set; } = "";

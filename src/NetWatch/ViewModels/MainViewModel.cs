@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Windows;
 using System.Windows.Data;
@@ -153,6 +155,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         ClearEventsCommand = new RelayCommand(Events.Clear);
         DohRunCommand = new RelayCommand(() => _ = RunDnsCheck());
         OpenHostsCommand = new RelayCommand(OpenHostsFile);
+        InitNetworkCheck();
         ShowRelatedEventsCommand = new RelayCommand(ShowRelatedEventsForSelection);
         ClearEventsFilterCommand = new RelayCommand(ClearEventsFilter);
         QueryFileIntelCommand = new RelayCommand(() => _ = QuerySelectedFileIntelAsync());
@@ -525,6 +528,13 @@ public sealed class MainViewModel : VmBase, IDisposable
         Evidence.Enqueue(rec);
     }
 
+    private static PingRowVM PingRowFrom(PingProbeResult r)
+    {
+        var vm = new PingRowVM();
+        vm.Update(r);
+        return vm;
+    }
+
     /// 流量事件 → (身份, 目的地) 关系记账（域名优先；未解析身份与回环不计）
     private void OnTrafficObserved(NetEvent e)
     {
@@ -660,7 +670,126 @@ public sealed class MainViewModel : VmBase, IDisposable
         UpdateDetail();
     }
 
-    // ================= 进程处置：结束进程 / 任务管理器 / 服务 =================
+    // ================= 网络体检（NAT / 延迟 / 抖动 / 丢包） =================
+
+    public ObservableCollection<PingRowVM> PingRows { get; } = new();
+    public ObservableCollection<string> CheckAdvices { get; } = new();
+    public bool CheckRunning { get; private set; }
+    public string CheckProgressText { get; private set; } = "";
+    public string NatText { get; private set; } = "—";
+    public string NatExternal { get; private set; } = "";
+    public string NatDetailText { get; private set; } = "";
+    public string LinkTypeText { get; private set; } = "";
+    public string CheckVerdictText { get; private set; } = "";
+    public SolidColorBrush CheckVerdictBrush { get; private set; } = UiBrushes.Dim;
+    public RelayCommand NetworkCheckCommand { get; private set; } = null!;
+
+    private CancellationTokenSource? _checkCts;
+
+    public async Task RunNetworkCheckAsync()
+    {
+        if (CheckRunning) return;
+        _checkCts = new CancellationTokenSource();
+        var ct = _checkCts.Token;
+        CheckRunning = true;
+        NatText = "…"; NatExternal = ""; NatDetailText = ""; LinkTypeText = "";
+        CheckVerdictText = L10n.T("ncv.running"); CheckVerdictBrush = UiBrushes.Dim;
+        CheckAdvices.Clear(); PingRows.Clear();
+        RaiseAll(nameof(CheckRunning), nameof(CheckProgressText), nameof(NatText), nameof(NatExternal),
+            nameof(NatDetailText), nameof(LinkTypeText), nameof(CheckVerdictText), nameof(CheckVerdictBrush));
+
+        try
+        {
+            // 1) NAT 类型（STUN）
+            CheckProgressText = L10n.T("ncv.checking.nat");
+            Raise(nameof(CheckProgressText));
+            var nat = await StunClient.DetectAsync(ct);
+            NatText = nat.Classification;
+            NatExternal = string.IsNullOrEmpty(nat.ExternalIp) ? "—" : nat.ExternalIp;
+            NatDetailText = string.Join("\n", nat.Attempts.Select(a => $"• {a.Server} → {a.MappedIp}:{a.MappedPort}"));
+            RaiseAll(nameof(NatText), nameof(NatExternal), nameof(NatDetailText));
+
+            // 2) 连接方式（Wi-Fi / 有线）
+            var nic = NetworkInterface.GetAllNetworkInterfaces()
+                .FirstOrDefault(n => n.OperationalStatus == OperationalStatus.Up
+                                      && n.NetworkInterfaceType != NetworkInterfaceType.Loopback);
+            var isWifi = nic?.NetworkInterfaceType == NetworkInterfaceType.Wireless80211;
+            LinkTypeText = isWifi ? L10n.T("ncv.wifi") : L10n.T("ncv.eth");
+            Raise(nameof(LinkTypeText));
+
+            // 3) 延迟/抖动/丢包：网关（若有）+ 两个公网参考点
+            CheckProgressText = "";
+            Raise(nameof(CheckProgressText));
+            var targets = new List<string>();
+            var gw = Config.Snapshot.Adapters.Where(a => a.Status == "已连接")
+                .SelectMany(a => a.Gateways)
+                .FirstOrDefault(g => g.Contains('.') && !g.StartsWith("169.254"));
+            if (gw != null) targets.Add(gw);
+            targets.Add("223.5.5.5");
+            targets.Add("119.29.29.29");
+
+            int natScore = nat.Classification == L10n.T("ncv.nat.symmetric") ? 2
+                : nat.Classification == L10n.T("ncv.nat.cone") || nat.Classification == L10n.T("ncv.nat.direct") ? 0 : 1;
+            var advices = new List<string>();
+            if (natScore == 2) advices.Add(L10n.T("ncv.advise.nat.symmetric"));
+            if (isWifi) advices.Add(L10n.T("ncv.advise.wifi"));
+
+            int latencyScore = 0, jitterScore = 0, lossScore = 0;
+            double worstAvg = 0, worstJitter = 0, worstLoss = 0;
+
+            foreach (var target in targets)
+            {
+                CheckProgressText = L10n.T("ncv.checking.ping", target);
+                Raise(nameof(CheckProgressText));
+                var r = await PingProbe.RunAsync(target, 30, ct);
+                PingRows.Add(PingRowFrom(r));
+                if (r.Target != gw && r.Ok > 0) // 公网参考点计入评级（网关只做局域网参考）
+                {
+                    worstAvg = Math.Max(worstAvg, r.AvgMs);
+                    worstJitter = Math.Max(worstJitter, r.JitterMs);
+                    worstLoss = Math.Max(worstLoss, r.LossPct);
+                }
+                ct.ThrowIfCancellationRequested();
+            }
+
+            latencyScore = worstAvg <= 0 ? 1 : worstAvg < 40 ? 0 : worstAvg < 80 ? 1 : 2;
+            jitterScore = worstJitter < 5 ? 0 : worstJitter < 15 ? 1 : 2;
+            lossScore = worstLoss == 0 ? 0 : worstLoss < 2 ? 1 : 2;
+            if (worstAvg >= 80) advices.Add(L10n.T("ncv.advise.latency"));
+            if (worstJitter >= 15) advices.Add(L10n.T("ncv.advise.jitter"));
+            if (worstLoss >= 2) advices.Add(L10n.T("ncv.advise.loss"));
+
+            int total = natScore + latencyScore + jitterScore + lossScore;
+            (CheckVerdictText, CheckVerdictBrush) = total switch
+            {
+                0 => (L10n.T("ncv.excellent"), UiBrushes.Green),
+                <= 2 => (L10n.T("ncv.good"), UiBrushes.Green),
+                <= 4 => (L10n.T("ncv.fair"), UiBrushes.Amber),
+                _ => (L10n.T("ncv.poor"), UiBrushes.Red),
+            };
+
+            CheckAdvices.Clear();
+            foreach (var a in advices.Distinct()) CheckAdvices.Add("• " + a);
+            if (CheckAdvices.Count == 0) CheckAdvices.Add("• " + L10n.T("ncv.advise.allgood"));
+            RaiseAll(nameof(CheckAdvices), nameof(CheckVerdictText), nameof(CheckVerdictBrush));
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            MessageBox.Show(L10n.T("ncv.fail", ex.Message), "NetWatch", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            CheckRunning = false;
+            CheckProgressText = "";
+            RaiseAll(nameof(CheckRunning), nameof(CheckProgressText));
+        }
+    }
+
+    private void InitNetworkCheck()
+    {
+        NetworkCheckCommand = new RelayCommand(() => _ = RunNetworkCheckAsync());
+    }
 
     public void KillSelectedProcess()
     {
@@ -713,7 +842,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         var stopped = new List<string>();
         foreach (var s in svcs)
         {
-            var (ok, _) = RunSc($"stop \"{s.Name}\"");
+            var (ok, _) = RunSc("stop", s.Name);
             if (ok) stopped.Add(s.Name);
             AddSystemEvent(L10n.T("sys.serviceStopped", s.Name));
         }
@@ -738,19 +867,20 @@ public sealed class MainViewModel : VmBase, IDisposable
             return;
         foreach (var s in svcs)
         {
-            RunSc($"config \"{s.Name}\" start= disabled");
+            RunSc("config", s.Name, "start=", "disabled");
             AddSystemEvent(L10n.T("sys.serviceDisabled", s.Name));
         }
     }
 
-    private static (bool Ok, string Output) RunSc(string args)
+    private static (bool Ok, string Output) RunSc(params string[] args)
     {
         try
         {
-            var psi = new ProcessStartInfo("sc.exe", args)
+            var psi = new ProcessStartInfo("sc.exe")
             {
                 UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true,
             };
+            foreach (var a in args) psi.ArgumentList.Add(a);
             using var p = Process.Start(psi)!;
             var output = p.StandardOutput.ReadToEnd();
             p.WaitForExit(10000);
@@ -1222,7 +1352,14 @@ public sealed class MainViewModel : VmBase, IDisposable
             MessageBox.Show(L10n.T("msg.noPathShort"), "NetWatch", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        try { Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"")); } catch { }
+        try
+        {
+            // NTFS 文件名不含双引号，/select 参数无注入面；ArgumentList 避免空格路径被拆
+            var psi = new ProcessStartInfo("explorer.exe");
+            psi.ArgumentList.Add("/select," + path);
+            Process.Start(psi);
+        }
+        catch { }
     }
 
     public void ExportEvents()
@@ -1250,7 +1387,13 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     public void OpenHostsFile()
     {
-        try { Process.Start(new ProcessStartInfo("notepad.exe", NetConfigService.HostsPath)); } catch { }
+        try
+        {
+            var psi = new ProcessStartInfo("notepad.exe");
+            psi.ArgumentList.Add(NetConfigService.HostsPath);
+            Process.Start(psi);
+        }
+        catch { }
     }
 
     public async Task RunDnsCheck()
