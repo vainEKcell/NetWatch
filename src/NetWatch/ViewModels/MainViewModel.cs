@@ -246,6 +246,32 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     /// P2 调查联动：UI 订阅后切到事件流页
     public event Action? NavigateToEventsRequested;
+    public event Action? NavigateToOverviewRequested;
+    public event Action? NavigateToDnsRequested;
+
+    public void SelectProcessByPid(int pid)
+    {
+        if (_rowsByPid.TryGetValue(pid, out var row))
+        {
+            Selected = row;
+            NavigateToOverviewRequested?.Invoke();
+        }
+    }
+
+    /// 事件流右键：对目标域名（或 IP 的被动反查域名）发起 DNS 体检
+    public void RunDnsCheckForTarget(string? remoteIp, string? domain)
+    {
+        var target = domain ?? Dns.LookupDomain(remoteIp ?? "") ?? remoteIp;
+        if (string.IsNullOrEmpty(target) || !Util.IsPublicDomain(target))
+        {
+            MessageBox.Show(L10n.T("msg.noDomain"), "NetWatch", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        DohProbeDomains = target;
+        Raise(nameof(DohProbeDomains));
+        NavigateToDnsRequested?.Invoke();
+        _ = RunDnsCheck();
+    }
 
     public void TogglePause()
     {
@@ -535,6 +561,13 @@ public sealed class MainViewModel : VmBase, IDisposable
         return vm;
     }
 
+    private static string FormatLinkSpeed(long bitsPerSecond)
+    {
+        if (bitsPerSecond >= 1_000_000_000) return $"{bitsPerSecond / 1_000_000_000.0:0.#} Gbps";
+        if (bitsPerSecond >= 1_000_000) return $"{bitsPerSecond / 1_000_000.0:0.#} Mbps";
+        return $"{bitsPerSecond / 1_000.0:0.#} Kbps";
+    }
+
     /// 流量事件 → (身份, 目的地) 关系记账（域名优先；未解析身份与回环不计）
     private void OnTrafficObserved(NetEvent e)
     {
@@ -680,6 +713,8 @@ public sealed class MainViewModel : VmBase, IDisposable
     public string NatExternal { get; private set; } = "";
     public string NatDetailText { get; private set; } = "";
     public string LinkTypeText { get; private set; } = "";
+    public string LinkSpeedText { get; private set; } = "";
+    public string MtuText { get; private set; } = "—";
     public string CheckVerdictText { get; private set; } = "";
     public SolidColorBrush CheckVerdictBrush { get; private set; } = UiBrushes.Dim;
     public RelayCommand NetworkCheckCommand { get; private set; } = null!;
@@ -715,7 +750,8 @@ public sealed class MainViewModel : VmBase, IDisposable
                                       && n.NetworkInterfaceType != NetworkInterfaceType.Loopback);
             var isWifi = nic?.NetworkInterfaceType == NetworkInterfaceType.Wireless80211;
             LinkTypeText = isWifi ? L10n.T("ncv.wifi") : L10n.T("ncv.eth");
-            Raise(nameof(LinkTypeText));
+            LinkSpeedText = nic == null ? "—" : FormatLinkSpeed(nic.Speed);
+            RaiseAll(nameof(LinkTypeText), nameof(LinkSpeedText));
 
             // 3) 延迟/抖动/丢包：网关（若有）+ 两个公网参考点
             CheckProgressText = "";
@@ -759,6 +795,15 @@ public sealed class MainViewModel : VmBase, IDisposable
             if (worstJitter >= 15) advices.Add(L10n.T("ncv.advise.jitter"));
             if (worstLoss >= 2) advices.Add(L10n.T("ncv.advise.loss"));
 
+            // 路径 MTU（PPPoE/VPN 环境会明显低于 1500）
+            CheckProgressText = L10n.T("ncv.checking.mtu");
+            Raise(nameof(CheckProgressText));
+            var mtu = await PingProbe.ProbeMtuAsync("223.5.5.5", ct);
+            MtuText = mtu == null ? L10n.T("ncv.mtu.fail")
+                : mtu >= 1472 ? L10n.T("ncv.mtu.normal", mtu)
+                : L10n.T("ncv.mtu.low", mtu);
+            Raise(nameof(MtuText));
+
             int total = natScore + latencyScore + jitterScore + lossScore;
             (CheckVerdictText, CheckVerdictBrush) = total switch
             {
@@ -771,7 +816,7 @@ public sealed class MainViewModel : VmBase, IDisposable
             CheckAdvices.Clear();
             foreach (var a in advices.Distinct()) CheckAdvices.Add("• " + a);
             if (CheckAdvices.Count == 0) CheckAdvices.Add("• " + L10n.T("ncv.advise.allgood"));
-            RaiseAll(nameof(CheckAdvices), nameof(CheckVerdictText), nameof(CheckVerdictBrush));
+            RaiseAll(nameof(CheckAdvices), nameof(CheckVerdictText), nameof(CheckVerdictBrush), nameof(MtuText));
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)

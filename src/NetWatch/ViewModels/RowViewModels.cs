@@ -133,6 +133,8 @@ public sealed class ProcessRowVM : VmBase
 public sealed class EventRowVM : VmBase
 {
     public int Pid { get; private set; }
+    public string? RemoteIp { get; private set; }
+    public string? Domain { get; private set; }
     public DateTime RawTime { get; private set; }
     public string TimeText { get; private set; } = "";
     public string KindText { get; private set; } = "";
@@ -154,12 +156,14 @@ public sealed class EventRowVM : VmBase
         var vm = new EventRowVM
         {
             Pid = e.Pid,
+            RemoteIp = e.RemoteIp,
             RawTime = e.TimeUtc.ToLocalTime(),
             TimeText = e.TimeUtc.ToLocalTime().ToString("HH:mm:ss"),
             Process = procName,
             RawBytes = e.Kind == EventKind.Traffic ? e.Bytes : 0,
         };
         string domain = e.RemoteIp != null ? dns.LookupDomain(e.RemoteIp) ?? "" : "";
+        vm.Domain = string.IsNullOrEmpty(domain) ? null : domain;
         string remote = e.RemoteIp == null ? "" : Util.FormatEndpoint(e.RemoteIp, e.RemotePort);
         if (domain.Length > 0) remote += $" ({domain})";
         vm.Detail = remote;
@@ -382,7 +386,9 @@ public sealed class PingRowVM : VmBase
     public string MaxText { get; private set; } = "";
     public string JitterText { get; private set; } = "";
     public string LossText { get; private set; } = "";
-    public SolidColorBrush Brush { get; private set; } = UiBrushes.Fg;
+    public string P95Text { get; private set; } = "";
+    public string QualityText { get; private set; } = "";
+    public SolidColorBrush QualityBrush { get; private set; } = UiBrushes.Fg;
 
     public void Update(PingProbeResult r)
     {
@@ -392,11 +398,12 @@ public sealed class PingRowVM : VmBase
         MaxText = $"{r.MaxMs:F1} ms";
         JitterText = $"{r.JitterMs:F1} ms";
         LossText = $"{r.LossPct:F1}%";
-        Brush = r.LossPct >= 2 || r.AvgMs >= 80 ? UiBrushes.Amber
-              : r.LossPct > 0 || r.AvgMs >= 40 ? UiBrushes.Fg
-              : UiBrushes.Green;
+        P95Text = $"{r.P95Ms:F1} ms";
+        var q = r.QualityScore switch { 0 => "ncv.q.excellent", 1 => "ncv.q.fair", _ => "ncv.q.poor" };
+        QualityText = L10n.T(q);
+        QualityBrush = r.QualityScore switch { 0 => UiBrushes.Green, 1 => UiBrushes.Amber, _ => UiBrushes.Red };
         RaiseAll(nameof(Target), nameof(MinText), nameof(AvgText), nameof(MaxText),
-            nameof(JitterText), nameof(LossText), nameof(Brush));
+            nameof(JitterText), nameof(LossText), nameof(P95Text), nameof(QualityText), nameof(QualityBrush));
     }
 }
 

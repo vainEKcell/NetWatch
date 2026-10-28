@@ -21,6 +21,8 @@ public partial class MainWindow : Window
         DataContext = _vm;
         _vm.ChartPush += (u, d) => Chart.Push(u, d);
         _vm.NavigateToEventsRequested += () => Nav.SelectedIndex = 5; // 事件流（网络体检页插入后顺延）
+        _vm.NavigateToOverviewRequested += () => Nav.SelectedIndex = 0;
+        _vm.NavigateToDnsRequested += () => Nav.SelectedIndex = 2;
         _pages = new FrameworkElement[]
         {
             PageOverview, PageDestinations, PageDns, PageNetCheck, PagePorts,
@@ -117,6 +119,46 @@ public partial class MainWindow : Window
     {
         if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: EventRowVM ev } && ev.Pid > 0)
             _vm.FilterEventsByPid(ev.Pid);
+    }
+
+    // ---------- 事件流 / DNS 流右键动作 ----------
+
+    private void OnCmEventRelated(object sender, RoutedEventArgs e)
+    {
+        if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: EventRowVM ev } && ev.Pid > 0)
+            _vm.SelectProcessByPid(ev.Pid);
+    }
+
+    private void OnCmEventProcDetail(object sender, RoutedEventArgs e)
+    {
+        if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: EventRowVM ev } && ev.Pid > 0)
+            _vm.SelectProcessByPid(ev.Pid);
+    }
+
+    private void OnCmEventCopyTarget(object sender, RoutedEventArgs e)
+    {
+        if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: EventRowVM ev })
+        {
+            try { Clipboard.SetText(ev.RemoteIp ?? ev.Detail ?? ""); } catch { }
+        }
+    }
+
+    private void OnCmEventCheckDomain(object sender, RoutedEventArgs e)
+    {
+        if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: EventRowVM ev })
+            _vm.RunDnsCheckForTarget(ev.RemoteIp, ev.Domain);
+    }
+
+    private void OnCmDnsProcDetail(object sender, RoutedEventArgs e)
+    {
+        if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: DnsRowVM d } && d.Pid > 0)
+            _vm.SelectProcessByPid(d.Pid);
+    }
+
+    private void OnCmDnsCheckDomain(object sender, RoutedEventArgs e)
+    {
+        if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: DnsRowVM d })
+            _vm.RunDnsCheckForTarget(null, d.Domain);
     }
 
     // ---------- 数据与隐私设置（P3） ----------

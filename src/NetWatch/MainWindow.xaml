@@ -440,6 +440,12 @@
                                        Text="{DynamicResource dns.streamTitle}"/>
                             <DataGrid ItemsSource="{Binding DnsStream}" RowStyle="{StaticResource AlertRow}"
                                       CanUserSortColumns="False" RowHeight="26">
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="{DynamicResource cm.procDetail}" Click="OnCmDnsProcDetail"/>
+                                        <MenuItem Header="{DynamicResource cm.checkDomain}" Click="OnCmDnsCheckDomain"/>
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="{Binding [col.time], Source={x:Static services:Loc.Instance}}" Binding="{Binding TimeText}" Width="70"/>
                                     <DataGridTextColumn Header="{Binding [col.process], Source={x:Static services:Loc.Instance}}" Binding="{Binding Process}" Width="150"/>
@@ -529,8 +535,12 @@
                                 <StackPanel>
                                     <TextBlock Text="{DynamicResource ncv.link}" Style="{StaticResource SectionHeader}"/>
                                     <TextBlock Text="{Binding LinkTypeText}" FontSize="16" FontWeight="Bold"/>
+                                    <TextBlock Text="{DynamicResource ncv.linkspeed}" Style="{StaticResource SectionHeader}"/>
+                                    <TextBlock Text="{Binding LinkSpeedText}" Foreground="{DynamicResource DimBrush}"/>
+                                    <TextBlock Text="{DynamicResource ncv.mtu}" Style="{StaticResource SectionHeader}"/>
+                                    <TextBlock Text="{Binding MtuText}" Foreground="{DynamicResource DimBrush}" TextWrapping="Wrap"/>
                                     <TextBlock Text="{DynamicResource ncv.nat.detail}" Style="{StaticResource SectionHeader}"/>
-                                    <TextBlock Text="{Binding NatDetailText}" Foreground="{StaticResource DimBrush}"
+                                    <TextBlock Text="{Binding NatDetailText}" Foreground="{DynamicResource DimBrush}"
                                                TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
                             </Border>
@@ -542,13 +552,22 @@
                                            Text="{DynamicResource ncv.ping}"/>
                                 <DataGrid ItemsSource="{Binding PingRows}" CanUserSortColumns="False" RowHeight="28">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{Binding [col.pingTarget], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding Target}" Width="1.4*"/>
-                                        <DataGridTextColumn Header="{Binding [col.min], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding MinText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.avg], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding AvgText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.max], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding MaxText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.jitter], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding JitterText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.loss], RelativeSource={RelativeSource AncestorType=DataGrid}}" Binding="{Binding LossText}" Width="*"
+                                        <DataGridTextColumn Header="{Binding [col.pingTarget], Source={StaticResource Loc}}" Binding="{Binding Target}" Width="1.4*"/>
+                                        <DataGridTextColumn Header="{Binding [col.min], Source={StaticResource Loc}}" Binding="{Binding MinText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.avg], Source={StaticResource Loc}}" Binding="{Binding AvgText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.max], Source={StaticResource Loc}}" Binding="{Binding MaxText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.jitter], Source={StaticResource Loc}}" Binding="{Binding JitterText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.loss], Source={StaticResource Loc}}" Binding="{Binding LossText}" Width="*"
                                                             ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.p95], Source={StaticResource Loc}}" Binding="{Binding P95Text}" Width="*"
+                                                            ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTemplateColumn Header="{Binding [col.quality], Source={StaticResource Loc}}" Width="70">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding QualityText}" Foreground="{Binding QualityBrush}" HorizontalAlignment="Right"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </DockPanel>
@@ -604,11 +623,18 @@
                                 Visibility="{Binding EventsFilterVisible, Converter={StaticResource BoolToVis}}"/>
                         <TextBlock Text="{DynamicResource ev.note}"
                                    Foreground="{DynamicResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                        <TextBlock Text="{DynamicResource ev.hint}"
+                                   Foreground="{DynamicResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"
+                                   ToolTip="{DynamicResource ev.hint}"/>
                     </StackPanel>
                     <DataGrid ItemsSource="{Binding Events}" CanUserSortColumns="False">
                         <DataGrid.ContextMenu>
                             <ContextMenu>
+                                <MenuItem Header="{DynamicResource cm.related}" Click="OnCmEventRelated"/>
+                                <MenuItem Header="{DynamicResource cm.procDetail}" Click="OnCmEventProcDetail"/>
                                 <MenuItem Header="{DynamicResource cm.filterPid}" Click="OnCmFilterEventPid"/>
+                                <MenuItem Header="{DynamicResource cm.copyTarget}" Click="OnCmEventCopyTarget"/>
+                                <MenuItem Header="{DynamicResource cm.checkDomain}" Click="OnCmEventCheckDomain"/>
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                         <DataGrid.Columns>
