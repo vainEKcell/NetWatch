@@ -1,4 +1,5 @@
 using System.Net;
+using System.Threading;
 using Microsoft.Diagnostics.Tracing;
 using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
@@ -43,7 +44,21 @@ public sealed class EtwNetworkMonitor : IDisposable
             // 否则 EnableKernelProvider 抛出“must be enabled first and only once”
             session.EnableKernelProvider(KernelTraceEventParser.Keywords.NetworkTCPIP
                 | KernelTraceEventParser.Keywords.Process);
-            session.EnableProvider("Microsoft-Windows-DNS-Client");
+
+            // 按名启用清单提供程序偶发 WMI 瞬时错误（0x80071069），重试一次
+            for (int attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    session.EnableProvider("Microsoft-Windows-DNS-Client");
+                    break;
+                }
+                catch (Exception ex) when (attempt == 1)
+                {
+                    Log.Error($"DNS-Client 提供程序启用失败（{ex.Message}），1.5 秒后重试一次");
+                    Thread.Sleep(1500);
+                }
+            }
 
             var k = session.Source.Kernel;
 

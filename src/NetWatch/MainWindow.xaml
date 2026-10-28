@@ -552,16 +552,16 @@
                                            Text="{DynamicResource ncv.ping}"/>
                                 <DataGrid ItemsSource="{Binding PingRows}" CanUserSortColumns="False" RowHeight="28">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{Binding [col.pingTarget], Source={StaticResource Loc}}" Binding="{Binding Target}" Width="1.4*"/>
-                                        <DataGridTextColumn Header="{Binding [col.min], Source={StaticResource Loc}}" Binding="{Binding MinText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.avg], Source={StaticResource Loc}}" Binding="{Binding AvgText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.max], Source={StaticResource Loc}}" Binding="{Binding MaxText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.jitter], Source={StaticResource Loc}}" Binding="{Binding JitterText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.loss], Source={StaticResource Loc}}" Binding="{Binding LossText}" Width="*"
+                                        <DataGridTextColumn Header="{Binding [col.pingTarget], Source={x:Static services:Loc.Instance}}" Binding="{Binding Target}" Width="1.4*"/>
+                                        <DataGridTextColumn Header="{Binding [col.min], Source={x:Static services:Loc.Instance}}" Binding="{Binding MinText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.avg], Source={x:Static services:Loc.Instance}}" Binding="{Binding AvgText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.max], Source={x:Static services:Loc.Instance}}" Binding="{Binding MaxText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.jitter], Source={x:Static services:Loc.Instance}}" Binding="{Binding JitterText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [col.loss], Source={x:Static services:Loc.Instance}}" Binding="{Binding LossText}" Width="*"
                                                             ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.p95], Source={StaticResource Loc}}" Binding="{Binding P95Text}" Width="*"
+                                        <DataGridTextColumn Header="{Binding [col.p95], Source={x:Static services:Loc.Instance}}" Binding="{Binding P95Text}" Width="*"
                                                             ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTemplateColumn Header="{Binding [col.quality], Source={StaticResource Loc}}" Width="70">
+                                        <DataGridTemplateColumn Header="{Binding [col.quality], Source={x:Static services:Loc.Instance}}" Width="70">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding QualityText}" Foreground="{Binding QualityBrush}" HorizontalAlignment="Right"/>

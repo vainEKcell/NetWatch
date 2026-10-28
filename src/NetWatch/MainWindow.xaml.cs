@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using Hardcodet.Wpf.TaskbarNotification;
+using NetWatch.Services;
 using NetWatch.ViewModels;
 
 namespace NetWatch;
@@ -42,9 +43,17 @@ public partial class MainWindow : Window
     {
         try
         {
-            _tray.IconSource = new BitmapImage(new Uri("pack://application:,,,/Assets/app.ico"));
+            // BitmapImage 默认取 ICO 最小帧（16px），高 DPI 托盘上发虚；
+            // 用 BitmapDecoder 显式取最大帧，失败再退回默认
+            var decoder = BitmapDecoder.Create(new Uri("pack://application:,,,/Assets/app.ico"),
+                BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+            var best = decoder.Frames.OrderByDescending(f => f.PixelWidth).First();
+            _tray.IconSource = best;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Log.Error("托盘图标加载失败，使用空图标兜底", ex);
+        }
         _tray.ToolTipText = "NetWatch";
         _tray.TrayLeftMouseUp += (_, _) => RestoreFromTray();
 
