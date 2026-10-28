@@ -86,7 +86,7 @@ public static class StunClient
                 var res = await udp.ReceiveAsync(timeout.Token);
                 var buf = res.Buffer;
                 if (buf.Length < 20) continue;
-                if (buf[0] != 0x00 || buf[1] != 0x01) continue;              // Binding Success Response
+                if (buf[0] != 0x01 || buf[1] != 0x01) continue;              // Binding Success Response (0x0101)
                 if (!tx.AsSpan().SequenceEqual(buf.AsSpan(8, 12))) continue; // transaction id
                 var mapped = ParseMappedAddress(buf);
                 if (mapped != null) return mapped;
