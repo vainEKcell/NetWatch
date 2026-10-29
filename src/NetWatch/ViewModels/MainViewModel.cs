@@ -721,7 +721,6 @@ public sealed class MainViewModel : VmBase, IDisposable
     public string MtuText { get; private set; } = "—";
     public string WifiSignalText { get; private set; } = "";
     public string WifiSsidText { get; private set; } = "";
-    public string NatNoteText { get; private set; } = "";
     public string PeakText { get; private set; } = "";
     public string BandwidthUsageText { get; private set; } = "";
     public ObservableCollection<ScenarioRowVM> ScenarioRows { get; } = new();
@@ -760,12 +759,12 @@ public sealed class MainViewModel : VmBase, IDisposable
         var ct = _checkCts.Token;
         CheckRunning = true;
         NatText = "…"; NatExternal = ""; NatDetailText = ""; LinkTypeText = "";
-        NatNoteText = ""; WifiSignalText = ""; WifiSsidText = "";
+        WifiSignalText = ""; WifiSsidText = "";
         CheckVerdictText = L10n.T("ncv.running"); CheckVerdictBrush = UiBrushes.Dim;
         CheckAdvices.Clear(); PingRows.Clear(); ScenarioRows.Clear();
         RaiseAll(nameof(CheckRunning), nameof(CheckProgressText), nameof(NatText), nameof(NatExternal),
             nameof(NatDetailText), nameof(LinkTypeText), nameof(CheckVerdictText), nameof(CheckVerdictBrush),
-            nameof(NatNoteText), nameof(WifiSignalText), nameof(WifiSsidText));
+            nameof(WifiSignalText), nameof(WifiSsidText));
 
         try
         {
@@ -776,14 +775,7 @@ public sealed class MainViewModel : VmBase, IDisposable
             NatText = nat.Classification;
             NatExternal = string.IsNullOrEmpty(nat.ExternalIp) ? "—" : nat.ExternalIp;
             NatDetailText = string.Join("\n", nat.Attempts.Select(a => $"• {a.Server} → {a.MappedIp}:{a.MappedPort}"));
-            NatNoteText = nat.Classification switch
-            {
-                var c when c == L10n.T("ncv.nat.direct") => L10n.T("ncv.nat.note.direct"),
-                var c when c == L10n.T("ncv.nat.cone") => L10n.T("ncv.nat.note.cone"),
-                var c when c == L10n.T("ncv.nat.symmetric") => L10n.T("ncv.nat.note.symmetric"),
-                _ => "",
-            };
-            RaiseAll(nameof(NatText), nameof(NatExternal), nameof(NatDetailText), nameof(NatNoteText));
+            RaiseAll(nameof(NatText), nameof(NatExternal), nameof(NatDetailText));
 
             // 2) 连接方式（Wi-Fi / 有线）
             var nic = NetworkInterface.GetAllNetworkInterfaces()
@@ -895,20 +887,21 @@ public sealed class MainViewModel : VmBase, IDisposable
         NetworkCheckCommand = new RelayCommand(() => _ = RunNetworkCheckAsync());
     }
 
-    public void KillSelectedProcess()
+    public void KillSelectedProcess() => KillPid(_selected?.Pid ?? -1);
+
+    public void KillPid(int pid)
     {
-        var row = _selected;
-        if (row == null) return;
-        var entry = Tracker.Get(row.Pid);
-        if (MessageBox.Show(L10n.T("msg.confirmKill", entry.Name, entry.Pid), "NetWatch",
+        if (pid <= 0) return;
+        var entry = Tracker.Get(pid);
+        if (MessageBox.Show(L10n.T("msg.confirmKill", entry.Name, pid), "NetWatch",
                 MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
             return;
         try
         {
-            using var p = Process.GetProcessById(row.Pid);
+            using var p = Process.GetProcessById(pid);
             p.Kill();
             p.WaitForExit(3000);
-            AddSystemEvent(L10n.T("sys.processKilled", entry.Name, entry.Pid));
+            AddSystemEvent(L10n.T("sys.processKilled", entry.Name, pid));
         }
         catch (Exception ex)
         {
@@ -1370,11 +1363,12 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     // ================= 操作 =================
 
-    public void BlockSelected()
+    public void BlockSelected() => BlockPid(_selected?.Pid ?? -1);
+
+    public void BlockPid(int pid)
     {
-        var row = _selected;
-        if (row == null) return;
-        var entry = Tracker.Get(row.Pid);
+        if (pid <= 0) return;
+        var entry = Tracker.Get(pid);
         var path = entry.Path;
         if (string.IsNullOrEmpty(path))
         {

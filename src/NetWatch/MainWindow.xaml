@@ -541,8 +541,6 @@
                                 <StackPanel>
                                     <TextBlock Text="{DynamicResource ncv.nat}" Style="{StaticResource SectionHeader}"/>
                                     <TextBlock Text="{Binding NatText}" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
-                                    <TextBlock Text="{Binding NatNoteText}" FontSize="11"
-                                               Foreground="{DynamicResource DimBrush}" TextWrapping="Wrap" Margin="0,3,0,0"/>
                                     <TextBlock Text="{DynamicResource ncv.external}" Style="{StaticResource SectionHeader}"/>
                                     <TextBlock Text="{Binding NatExternal}" Foreground="{DynamicResource DimBrush}"/>
                                 </StackPanel>

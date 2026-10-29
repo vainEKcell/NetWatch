@@ -168,6 +168,8 @@
     <sys:String x:Key="set.about">About</sys:String>
     <sys:String x:Key="cm.detail">Details</sys:String>
     <sys:String x:Key="dw.event.explain">This event means the process initiated (or received) a network connection. To judge whether that's reasonable: who is it (signature/path), where did it connect (domain/IP), and what's its verdict — unknown app + unknown target + unsigned is the combination worth attention.</sys:String>
+    <sys:String x:Key="dw.noProcess">This record has no associated process (system message or aggregated row). General interpretation guide below:</sys:String>
+    <sys:String x:Key="dw.actions">Actions</sys:String>
     <sys:String x:Key="dw.basis">Basis</sys:String>
     <sys:String x:Key="dw.caveat">False-positive note</sys:String>
     <sys:String x:Key="dw.guide.title">Interpretation guide: how to read these signals</sys:String>
@@ -180,9 +182,6 @@
     <sys:String x:Key="ncv.nat.direct">Direct (no NAT)</sys:String>
     <sys:String x:Key="ncv.nat.cone">Cone NAT</sys:String>
     <sys:String x:Key="ncv.nat.symmetric">Symmetric NAT</sys:String>
-    <sys:String x:Key="ncv.nat.note.direct">Accelerator scale: no NAT — ideal</sys:String>
-    <sys:String x:Key="ncv.nat.note.cone">Accelerator scale: NAT1–NAT2 (A/B) — online-friendly</sys:String>
-    <sys:String x:Key="ncv.nat.note.symmetric">Accelerator scale: NAT4 (D) — P2P limited</sys:String>
     <sys:String x:Key="ncv.nat.insufficient">Insufficient data (only one STUN server reachable)</sys:String>
     <sys:String x:Key="ncv.nat.fail">Cannot detect (no STUN response — if a proxy/TUN mode is on, UDP probes may be intercepted; try disabling it briefly)</sys:String>
     <sys:String x:Key="ncv.nat.detail">Probe details</sys:String>

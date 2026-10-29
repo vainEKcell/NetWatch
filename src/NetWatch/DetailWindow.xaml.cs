@@ -7,7 +7,7 @@ using NetWatch.ViewModels;
 
 namespace NetWatch;
 
-/// 进程 / 事件的详情与解读小窗：展示证据链 + 通俗的"怎么分析"指南。
+/// 进程 / 事件的详情与解读小窗：展示证据链 + 通俗的"怎么分析"指南 + 可执行操作。
 /// 内容在代码中构建（数据来自 MainViewModel 的快照），样式走主题画刷。
 public partial class DetailWindow : Window
 {
@@ -41,23 +41,7 @@ public partial class DetailWindow : Window
 
     private void Build(int pid, string? eventNote)
     {
-        var entry = _vm.Tracker.Get(pid);
-        var inst = _vm.Entities.GetProcess(pid);
-        var id = _vm.Entities.GetIdentity(inst?.IdentityKey);
-        var verdict = _vm.GetVerdictFor(pid);
-        var svcs = _vm.Entities.ServicesOf(pid);
-        var conns = _vm.ConnectionsOf(pid);
-        var dnsList = _vm.Dns.RecentDomains(pid);
-
-        // ---- 头部 ----
-        var head = new StackPanel { Orientation = Orientation.Horizontal };
-        if (entry.Icon != null)
-            head.Children.Add(new Image { Source = entry.Icon, Width = 32, Height = 32, VerticalAlignment = VerticalAlignment.Center });
-        var headText = new StackPanel { Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        headText.Children.Add(Line($"{entry.Name}  (PID {entry.Pid})", Res("FgBrush"), bold: true));
-        headText.Children.Add(Line(entry.Company ?? entry.Description ?? "", Res("DimBrush")));
-        head.Children.Add(headText);
-        Root.Children.Add(head);
+        bool hasProcess = pid > 0 && _vm.Entities.GetProcess(pid) != null;
 
         // ---- 事件上下文（从事件流进入时） ----
         if (!string.IsNullOrEmpty(eventNote))
@@ -68,8 +52,13 @@ public partial class DetailWindow : Window
         }
 
         // ---- 判定与证据 ----
+        var verdict = hasProcess ? _vm.GetVerdictFor(pid) : null;
         Root.Children.Add(Header(L10n.T("d.verdict")));
-        if (verdict == null)
+        if (!hasProcess)
+        {
+            Root.Children.Add(Line(L10n.T("dw.noProcess"), Res("DimBrush")));
+        }
+        else if (verdict == null)
         {
             Root.Children.Add(Line(L10n.T("d.analyzing"), Res("DimBrush")));
         }
@@ -99,20 +88,40 @@ public partial class DetailWindow : Window
             }
         }
 
+        // ---- 无进程上下文（纯事件/系统消息）：到解读指南为止 ----
+        if (!hasProcess)
+        {
+            AppendGuide();
+            return;
+        }
+
         // ---- 基本信息 ----
+        var entry = _vm.Tracker.Get(pid);
+        var head = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
+        if (entry.Icon != null)
+            head.Children.Add(new Image { Source = entry.Icon, Width = 32, Height = 32, VerticalAlignment = VerticalAlignment.Center });
+        var headText = new StackPanel { Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        headText.Children.Add(Line($"{entry.Name}  (PID {entry.Pid})", Res("FgBrush"), bold: true));
+        headText.Children.Add(Line(entry.Company ?? entry.Description ?? "", Res("DimBrush")));
+        head.Children.Add(headText);
+        Root.Children.Insert(0, head);
+
         Root.Children.Add(Header(L10n.T("d.path")));
         Root.Children.Add(Line(entry.Path ?? L10n.T("d.pathUnavailable"), Res("DimBrush")));
         Root.Children.Add(Header(L10n.T("d.signature")));
         Root.Children.Add(Line(SignatureText(entry.Signature, entry.SignatureSubject), SignatureBrush(entry.Signature)));
         Root.Children.Add(Header(L10n.T("d.parent")));
+        var inst = _vm.Entities.GetProcess(pid);
         Root.Children.Add(Line(inst?.ParentPid is { } pp
             ? $"PID {pp}" + (_vm.Entities.GetProcess(pp)?.Name is { } pn ? $" · {pn}" : "")
             : L10n.T("d.parentUnknown"), Res("DimBrush")));
         Root.Children.Add(Header(L10n.T("d.cmdline")));
         Root.Children.Add(Line(inst?.CommandLine ?? L10n.T("d.cmdNone"), Res("DimBrush")));
+        var svcs = _vm.Entities.ServicesOf(pid);
         Root.Children.Add(Header(L10n.T("d.services")));
         Root.Children.Add(Line(svcs.Count == 0 ? L10n.T("d.noServices")
             : string.Join("、", svcs.Select(s => s.DisplayName == s.Name ? s.Name : $"{s.Name} ({s.DisplayName})")), Res("DimBrush")));
+        var id = _vm.Entities.GetIdentity(inst?.IdentityKey);
         Root.Children.Add(Header(L10n.T("d.identity")));
         Root.Children.Add(Line(id == null ? L10n.T("common.unknown")
             : $"{L10n.T(id.Kind switch { IdentityKind.Signed => "id.signed", IdentityKind.PathOnly => "id.pathOnly", IdentityKind.SystemReserved => "id.sysReserved", IdentityKind.Packaged => "id.packaged", _ => "common.unknown" })} · {id.DisplayName}" +
@@ -121,6 +130,7 @@ public partial class DetailWindow : Window
 
         // ---- 当前连接 ----
         Root.Children.Add(Header(L10n.T("d.conns")));
+        var conns = _vm.ConnectionsOf(pid);
         if (conns.Count == 0)
             Root.Children.Add(Line(L10n.T("d.noDns"), Res("DimBrush")));
         foreach (var c in conns.Take(20))
@@ -132,7 +142,28 @@ public partial class DetailWindow : Window
         if (doms.Count == 0) Root.Children.Add(Line(L10n.T("d.noDns"), Res("DimBrush")));
         else foreach (var d in doms) Root.Children.Add(Line(d, Res("DimBrush")));
 
+        // ---- 可执行操作 ----
+        Root.Children.Add(Header(L10n.T("dw.actions")));
+        var actions = new WrapPanel();
+        actions.Children.Add(MakeAction(L10n.T("btn.block"), () => _vm.BlockPid(pid)));
+        actions.Children.Add(MakeAction(L10n.T("cm.kill"), () => _vm.KillPid(pid)));
+        actions.Children.Add(MakeAction(L10n.T("btn.related"), () => { _vm.FilterEventsByPid(pid); Close(); }));
+        actions.Children.Add(MakeAction(L10n.T("cm.copyPid"), () => { try { Clipboard.SetText(pid.ToString()); } catch { } }));
+        Root.Children.Add(actions);
+
         // ---- 解读指南 ----
+        AppendGuide();
+    }
+
+    private static Button MakeAction(string content, Action onClick)
+    {
+        var b = new Button { Content = content, Margin = new Thickness(0, 0, 8, 4), Padding = new Thickness(10, 5, 10, 5) };
+        b.Click += (_, _) => onClick();
+        return b;
+    }
+
+    private void AppendGuide()
+    {
         Root.Children.Add(Header(L10n.T("dw.guide.title")));
         foreach (var line in L10n.T("dw.guide").Split('\n'))
             Root.Children.Add(Line(line.TrimEnd('\r'), Res("DimBrush")));
