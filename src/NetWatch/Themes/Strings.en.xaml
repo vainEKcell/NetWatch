@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <!-- English string table -->
@@ -166,7 +166,7 @@
     <sys:String x:Key="banner.dns1">{0} DNS/config hint (see DNS Safety page and Events)</sys:String>
     <sys:String x:Key="eng.attentionSummary1">Noteworthy feature present ({0} evidence item) — expand the evidence chain and check destinations</sys:String>
     <sys:String x:Key="set.about">About</sys:String>
-    <sys:String x:Key="cm.detail">📋 Details &amp; interpretation</sys:String>
+    <sys:String x:Key="cm.detail">Details</sys:String>
     <sys:String x:Key="dw.event.explain">This event means the process initiated (or received) a network connection. To judge whether that's reasonable: who is it (signature/path), where did it connect (domain/IP), and what's its verdict — unknown app + unknown target + unsigned is the combination worth attention.</sys:String>
     <sys:String x:Key="dw.basis">Basis</sys:String>
     <sys:String x:Key="dw.caveat">False-positive note</sys:String>
@@ -205,8 +205,9 @@
     <sys:String x:Key="ncv.linkspeed">NIC link speed</sys:String>
     <sys:String x:Key="cm.copyTarget">Copy target address</sys:String>
     <sys:String x:Key="cm.checkDomain">🌐 DNS-check this domain</sys:String>
-    <sys:String x:Key="cm.procDetail">📋 Jump to process details (Overview)</sys:String>
-    <sys:String x:Key="ev.hint">Right-click an event to jump: related events, process details, DNS-check the target domain, copy address. When a DNS hint appears, right-click to cross-validate.</sys:String>
+    <sys:String x:Key="cm.procDetail">Open this process in Overview</sys:String>
+    <sys:String x:Key="cm.resetFilter">Show all events (reset filter)</sys:String>
+    <sys:String x:Key="ev.hint">Right-click an event to jump: related events, open the process in Overview, DNS-check the target domain, copy address. After filtering, use "Show all events" to reset.</sys:String>
     <sys:String x:Key="ncv.link">Link type</sys:String>
     <sys:String x:Key="ncv.wifi">Wireless (Wi-Fi)</sys:String>
     <sys:String x:Key="ncv.eth">Ethernet</sys:String>

@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <!-- 中文（简体）字符串表 -->
@@ -165,7 +165,6 @@
     <sys:String x:Key="banner.flagged1">{0} 个进程存在值得关注的行为（详见总览标色与详情面板，提示 ≠ 确诊）</sys:String>
     <sys:String x:Key="banner.dns1">{0} 条 DNS/配置提示（见 DNS 安全页与事件流）</sys:String>
     <sys:String x:Key="eng.attentionSummary1">存在值得关注的特征（{0} 项证据）——请展开证据链并结合目的地判断</sys:String>
-    <sys:String x:Key="cm.detail">📋 详情与解读</sys:String>
     <sys:String x:Key="dw.event.explain">这条事件表示该进程发起（或收到）了一次网络连接。判断是否合理：看下方它是谁（签名/路径）、连到哪里（目标域名/IP）、它的判定结论——陌生程序 + 陌生目标 + 未签名，才值得警惕。</sys:String>
     <sys:String x:Key="dw.basis">依据</sys:String>
     <sys:String x:Key="dw.caveat">误报可能</sys:String>
@@ -202,10 +201,12 @@
     <sys:String x:Key="ncv.mtu.low">≈{0} 字节（PPPoE 拨号/VPN 环境属正常，吞吐略降）</sys:String>
     <sys:String x:Key="ncv.mtu.fail">探测失败</sys:String>
     <sys:String x:Key="ncv.linkspeed">网卡链路速率</sys:String>
+    <sys:String x:Key="cm.detail">详情</sys:String>
+    <sys:String x:Key="cm.procDetail">在总览中打开此进程</sys:String>
+    <sys:String x:Key="cm.resetFilter">显示全部事件（重置筛选）</sys:String>
     <sys:String x:Key="cm.copyTarget">复制目标地址</sys:String>
     <sys:String x:Key="cm.checkDomain">🌐 对此域名做 DNS 体检</sys:String>
-    <sys:String x:Key="cm.procDetail">📋 跳转此进程详情（总览）</sys:String>
-    <sys:String x:Key="ev.hint">右键事件可跳转：查看相关事件、跳进程详情、对目标域名做 DNS 体检、复制地址。DNS 告警出现后，建议右键做一次体检交叉验证。</sys:String>
+    <sys:String x:Key="ev.hint">右键事件可跳转：查看相关事件、在总览中打开此进程、对目标域名做 DNS 体检、复制地址。筛选后可用「显示全部事件」重置。</sys:String>
     <sys:String x:Key="ncv.link">连接方式</sys:String>
     <sys:String x:Key="ncv.wifi">无线 (Wi-Fi)</sys:String>
     <sys:String x:Key="ncv.eth">有线 (Ethernet)</sys:String>

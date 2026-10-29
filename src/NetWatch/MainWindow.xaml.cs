@@ -207,6 +207,8 @@ public partial class MainWindow : Window
             _vm.RunDnsCheckForTarget(ev.RemoteIp, ev.Domain);
     }
 
+    private void OnCmResetFilter(object sender, RoutedEventArgs e) => _vm.ClearEventsFilter();
+
     private void OnCmDnsProcDetail(object sender, RoutedEventArgs e)
     {
         if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: DnsRowVM d } && d.Pid > 0)

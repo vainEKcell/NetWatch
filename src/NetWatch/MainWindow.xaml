@@ -667,6 +667,8 @@
                                 <MenuItem Header="{DynamicResource cm.related}" Click="OnCmEventRelated"/>
                                 <MenuItem Header="{DynamicResource cm.procDetail}" Click="OnCmEventProcDetail"/>
                                 <MenuItem Header="{DynamicResource cm.filterPid}" Click="OnCmFilterEventPid"/>
+                                <MenuItem Header="{DynamicResource cm.resetFilter}" Click="OnCmResetFilter"/>
+                                <Separator/>
                                 <MenuItem Header="{DynamicResource cm.copyTarget}" Click="OnCmEventCopyTarget"/>
                                 <MenuItem Header="{DynamicResource cm.checkDomain}" Click="OnCmEventCheckDomain"/>
                             </ContextMenu>
