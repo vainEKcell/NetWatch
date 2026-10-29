@@ -563,9 +563,13 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     private static string FormatLinkSpeed(long bitsPerSecond)
     {
-        if (bitsPerSecond >= 1_000_000_000) return $"{bitsPerSecond / 1_000_000_000.0:0.#} Gbps";
-        if (bitsPerSecond >= 1_000_000) return $"{bitsPerSecond / 1_000_000.0:0.#} Mbps";
-        return $"{bitsPerSecond / 1_000.0:0.#} Kbps";
+        // 双单位：比特（链路协商速率）+ 字节（直观的每秒传输量），方便换算
+        string bits = bitsPerSecond >= 1_000_000_000
+            ? $"{bitsPerSecond / 1_000_000_000.0:0.#} Gbps"
+            : $"{bitsPerSecond / 1_000_000.0:0.#} Mbps";
+        double mbPerSec = bitsPerSecond / 8.0 / 1_000_000;
+        string bytesUnit = mbPerSec >= 1000 ? $"{mbPerSec / 1000:0.#} GB/s" : $"{mbPerSec:0.#} MB/s";
+        return $"{bits}（≈{bytesUnit}）";
     }
 
     /// 流量事件 → (身份, 目的地) 关系记账（域名优先；未解析身份与回环不计）
@@ -719,6 +723,7 @@ public sealed class MainViewModel : VmBase, IDisposable
     public string WifiSsidText { get; private set; } = "";
     public string NatNoteText { get; private set; } = "";
     public string PeakText { get; private set; } = "";
+    public string BandwidthUsageText { get; private set; } = "";
     public ObservableCollection<ScenarioRowVM> ScenarioRows { get; } = new();
     public string CheckVerdictText { get; private set; } = "";
     public SolidColorBrush CheckVerdictBrush { get; private set; } = UiBrushes.Dim;
@@ -726,6 +731,7 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     private CancellationTokenSource? _checkCts;
     private double _peakUp, _peakDown;
+    private long _linkBps;
 
     public Verdict? GetVerdictFor(int pid) =>
         _verdictsByPid.TryGetValue(pid, out var v) ? v : null;
@@ -1301,6 +1307,23 @@ public sealed class MainViewModel : VmBase, IDisposable
         if (upNow > _peakUp) _peakUp = upNow;
         if (downNow > _peakDown) _peakDown = downNow;
         PeakText = L10n.T("ncv.peak.text", Util.FormatSpeed(_peakUp), Util.FormatSpeed(_peakDown));
+
+        // 实时带宽占用：当前真实上下行（ETW 口径）+ 相对链路容量的利用率
+        if (_tickCount % 30 == 20)
+        {
+            try
+            {
+                var nic = NetworkInterface.GetAllNetworkInterfaces().FirstOrDefault(n =>
+                    n.OperationalStatus == OperationalStatus.Up
+                    && (n.NetworkInterfaceType == NetworkInterfaceType.Ethernet
+                        || n.NetworkInterfaceType == NetworkInterfaceType.Wireless80211));
+                _linkBps = nic?.Speed ?? 0;
+            }
+            catch { }
+        }
+        BandwidthUsageText = _linkBps > 0
+            ? $"↑ {Util.FormatSpeed(upNow)}　↓ {Util.FormatSpeed(downNow)}　·　占链路容量 ≈{Math.Max(upNow, downNow) * 8.0 / _linkBps * 100:0.#}%"
+            : $"↑ {Util.FormatSpeed(upNow)}　↓ {Util.FormatSpeed(downNow)}";
         SessionText = $"↑ {Util.FormatBytes(upAll)}　↓ {Util.FormatBytes(downAll)}";
         TrayText = $"↑ {Util.FormatSpeed(upNow)}   ↓ {Util.FormatSpeed(downNow)}";
         ConnCountText = L10n.T("st.connCount", _latestConns.Count(c => HideLoopback || !c.IsLoopback));
@@ -1321,6 +1344,7 @@ public sealed class MainViewModel : VmBase, IDisposable
 
         ChartPush?.Invoke(upNow, downNow);
         RaiseAll(nameof(TotalUpText), nameof(TotalDownText), nameof(SessionText), nameof(TrayText),
+            nameof(BandwidthUsageText),
             nameof(ConnCountText), nameof(BlockedCountText), nameof(BannerText), nameof(BannerVisible));
     }
 

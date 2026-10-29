@@ -220,6 +220,7 @@
     <sys:String x:Key="ncv.sc.streaming">高清流媒体 / 大文件传输</sys:String>
     <sys:String x:Key="ncv.sc.browsing">日常浏览</sys:String>
     <sys:String x:Key="ncv.peak">会话峰值速率</sys:String>
+    <sys:String x:Key="ncv.usage">当前上下行占用（实时，ETW 口径）</sys:String>
     <sys:String x:Key="ncv.peak.text">↑ {0}　↓ {1}</sys:String>
     <sys:String x:Key="ncv.wifi.signal">Wi-Fi 信号强度</sys:String>
     <sys:String x:Key="ncv.wifi.ssid">网络名称 (SSID)</sys:String>
