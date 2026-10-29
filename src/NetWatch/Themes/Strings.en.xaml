@@ -166,6 +166,12 @@
     <sys:String x:Key="banner.dns1">{0} DNS/config hint (see DNS Safety page and Events)</sys:String>
     <sys:String x:Key="eng.attentionSummary1">Noteworthy feature present ({0} evidence item) — expand the evidence chain and check destinations</sys:String>
     <sys:String x:Key="set.about">About</sys:String>
+    <sys:String x:Key="cm.detail">📋 Details &amp; interpretation</sys:String>
+    <sys:String x:Key="dw.event.explain">This event means the process initiated (or received) a network connection. To judge whether that's reasonable: who is it (signature/path), where did it connect (domain/IP), and what's its verdict — unknown app + unknown target + unsigned is the combination worth attention.</sys:String>
+    <sys:String x:Key="dw.basis">Basis</sys:String>
+    <sys:String x:Key="dw.caveat">False-positive note</sys:String>
+    <sys:String x:Key="dw.guide.title">Interpretation guide: how to read these signals</sys:String>
+    <sys:String x:Key="dw.guide">• Signature: valid = vendor-certified, generally safe; unsigned = many legit open-source apps too, but no stable identity; invalid = file changed after signing — pay attention.&#10;• Path: system processes only live in System32; temp/download directories deserve a second look (your own downloaded tools are fine).&#10;• Parent: desktop apps are launched by explorer, services by services; an unknown app launched by cmd/powershell deserves a closer look.&#10;• Connections: direction and target matter. Gateway-only = local LAN behavior; a public IP:443 connection is normal by itself — what matters is WHO the process is and whether it's persistent/frequent.&#10;• Principle: never conclude from a single signal (unsigned ≠ virus); multiple independent signals escalate to high risk; insufficient evidence shows "Unknown" honestly.&#10;• Go deeper: select the process in Overview for live connections, or right-click "Related events" to trace its history.</sys:String>
     <sys:String x:Key="ncv.run">Run network check</sys:String>
     <sys:String x:Key="ncv.running">Checking…</sys:String>
     <sys:String x:Key="ncv.note">The check sends a few probe packets to STUN servers and ping targets — only when clicked, zero background traffic.</sys:String>

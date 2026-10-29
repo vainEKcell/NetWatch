@@ -187,9 +187,12 @@
                     <DataGrid x:Name="ProcessGrid" Grid.Column="0" ItemsSource="{Binding Rows}"
                               RowStyle="{StaticResource ProcRow}" Sorting="OnProcessSort"
                               SelectedItem="{Binding Selected}" SelectionMode="Single"
+                              ContextMenuOpening="GridContextMenuOpening"
                               EnableRowVirtualization="True">
                         <DataGrid.ContextMenu>
                             <ContextMenu>
+                                <MenuItem Header="{DynamicResource cm.detail}" Click="OnCmProcDetailOpen"/>
+                                <Separator/>
                                 <MenuItem Header="{DynamicResource cm.related}" Command="{Binding ShowRelatedEventsCommand}"/>
                                 <MenuItem Header="{DynamicResource cm.copy}" Command="{Binding CopyCommand}"/>
                                 <MenuItem Header="{DynamicResource cm.folder}" Command="{Binding FolderCommand}"/>
@@ -439,9 +442,11 @@
                             <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}"
                                        Text="{DynamicResource dns.streamTitle}"/>
                             <DataGrid ItemsSource="{Binding DnsStream}" RowStyle="{StaticResource AlertRow}"
-                                      CanUserSortColumns="False" RowHeight="26">
+                                      CanUserSortColumns="False" RowHeight="26" ContextMenuOpening="GridContextMenuOpening">
                                 <DataGrid.ContextMenu>
                                     <ContextMenu>
+                                        <MenuItem Header="{DynamicResource cm.detail}" Click="OnCmProcDetailOpen"/>
+                                        <Separator/>
                                         <MenuItem Header="{DynamicResource cm.procDetail}" Click="OnCmDnsProcDetail"/>
                                         <MenuItem Header="{DynamicResource cm.checkDomain}" Click="OnCmDnsCheckDomain"/>
                                     </ContextMenu>
@@ -645,9 +650,11 @@
                                    Foreground="{DynamicResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"
                                    ToolTip="{DynamicResource ev.hint}"/>
                     </StackPanel>
-                    <DataGrid ItemsSource="{Binding Events}" CanUserSortColumns="False">
+                    <DataGrid ItemsSource="{Binding Events}" CanUserSortColumns="False" ContextMenuOpening="GridContextMenuOpening">
                         <DataGrid.ContextMenu>
                             <ContextMenu>
+                                <MenuItem Header="{DynamicResource cm.detail}" Click="OnCmProcDetailOpen"/>
+                                <Separator/>
                                 <MenuItem Header="{DynamicResource cm.related}" Click="OnCmEventRelated"/>
                                 <MenuItem Header="{DynamicResource cm.procDetail}" Click="OnCmEventProcDetail"/>
                                 <MenuItem Header="{DynamicResource cm.filterPid}" Click="OnCmFilterEventPid"/>

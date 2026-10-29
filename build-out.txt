@@ -1,14 +1,14 @@
   正在确定要还原的项目…
   所有项目均是最新的，无法还原。
-S:\ZWorker\NetWatch\src\NetWatch\Native\Authenticode.cs(80,24): warning SYSLIB0057: “X509Certificate.CreateFromSignedFile(string)”已过时:“Loading certificate data through the constructor or Import is obsolete. Use X509CertificateLoader instead to load certificates.” (https://aka.ms/dotnet-warnings/SYSLIB0057) [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(56,62): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(57,63): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(60,62): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(33,24): warning CS8600: 将 null 文本或可能的 null 值转换为不可为 null 类型。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(35,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(42,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(51,35): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(76,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Native\Authenticode.cs(80,24): warning SYSLIB0057: “X509Certificate.CreateFromSignedFile(string)”已过时:“Loading certificate data through the constructor or Import is obsolete. Use X509CertificateLoader instead to load certificates.” (https://aka.ms/dotnet-warnings/SYSLIB0057) [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(33,24): warning CS8600: 将 null 文本或可能的 null 值转换为不可为 null 类型。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(35,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(42,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(51,35): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(76,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(56,62): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(57,63): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(60,62): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
 S:\ZWorker\NetWatch\src\NetWatch\Native\Authenticode.cs(80,24): warning SYSLIB0057: “X509Certificate.CreateFromSignedFile(string)”已过时:“Loading certificate data through the constructor or Import is obsolete. Use X509CertificateLoader instead to load certificates.” (https://aka.ms/dotnet-warnings/SYSLIB0057) [S:\ZWorker\NetWatch\src\NetWatch\NetWatch.csproj]
 S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(56,62): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch.csproj]
 S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(57,63): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch.csproj]
@@ -22,15 +22,15 @@ S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(76,9): warning CS86
 
 已成功生成。
 
-S:\ZWorker\NetWatch\src\NetWatch\Native\Authenticode.cs(80,24): warning SYSLIB0057: “X509Certificate.CreateFromSignedFile(string)”已过时:“Loading certificate data through the constructor or Import is obsolete. Use X509CertificateLoader instead to load certificates.” (https://aka.ms/dotnet-warnings/SYSLIB0057) [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(56,62): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(57,63): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(60,62): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(33,24): warning CS8600: 将 null 文本或可能的 null 值转换为不可为 null 类型。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(35,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(42,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(51,35): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
-S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(76,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_1s50ahhn_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Native\Authenticode.cs(80,24): warning SYSLIB0057: “X509Certificate.CreateFromSignedFile(string)”已过时:“Loading certificate data through the constructor or Import is obsolete. Use X509CertificateLoader instead to load certificates.” (https://aka.ms/dotnet-warnings/SYSLIB0057) [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(33,24): warning CS8600: 将 null 文本或可能的 null 值转换为不可为 null 类型。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(35,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(42,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(51,35): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(76,9): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(56,62): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(57,63): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
+S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(60,62): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch_deq0hc3p_wpftmp.csproj]
 S:\ZWorker\NetWatch\src\NetWatch\Native\Authenticode.cs(80,24): warning SYSLIB0057: “X509Certificate.CreateFromSignedFile(string)”已过时:“Loading certificate data through the constructor or Import is obsolete. Use X509CertificateLoader instead to load certificates.” (https://aka.ms/dotnet-warnings/SYSLIB0057) [S:\ZWorker\NetWatch\src\NetWatch\NetWatch.csproj]
 S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(56,62): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch.csproj]
 S:\ZWorker\NetWatch\src\NetWatch\Services\StunClient.cs(57,63): warning CS8602: 解引用可能出现空引用。 [S:\ZWorker\NetWatch\src\NetWatch\NetWatch.csproj]
@@ -43,4 +43,4 @@ S:\ZWorker\NetWatch\src\NetWatch\Services\FirewallService.cs(76,9): warning CS86
     18 个警告
     0 个错误
 
-已用时间 00:00:09.54
+已用时间 00:00:05.56

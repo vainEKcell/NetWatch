@@ -165,7 +165,12 @@
     <sys:String x:Key="banner.flagged1">{0} 个进程存在值得关注的行为（详见总览标色与详情面板，提示 ≠ 确诊）</sys:String>
     <sys:String x:Key="banner.dns1">{0} 条 DNS/配置提示（见 DNS 安全页与事件流）</sys:String>
     <sys:String x:Key="eng.attentionSummary1">存在值得关注的特征（{0} 项证据）——请展开证据链并结合目的地判断</sys:String>
-    <sys:String x:Key="set.about">关于</sys:String>
+    <sys:String x:Key="cm.detail">📋 详情与解读</sys:String>
+    <sys:String x:Key="dw.event.explain">这条事件表示该进程发起（或收到）了一次网络连接。判断是否合理：看下方它是谁（签名/路径）、连到哪里（目标域名/IP）、它的判定结论——陌生程序 + 陌生目标 + 未签名，才值得警惕。</sys:String>
+    <sys:String x:Key="dw.basis">依据</sys:String>
+    <sys:String x:Key="dw.caveat">误报可能</sys:String>
+    <sys:String x:Key="dw.guide.title">解读指南：这些信号怎么看</sys:String>
+    <sys:String x:Key="dw.guide">• 签名：有效签名=厂商已认证，基本可放心；未签名=大量正常开源软件也如此，但无法建立稳定身份；签名无效=文件在签名后被改过，重点警惕。&#10;• 路径：系统进程只会在 System32；临时目录/下载目录里的程序要留个心眼（自己下载的工具属正常）。&#10;• 父进程：正常桌面程序由 explorer 拉起、服务由 services 拉起；如果是 cmd/powershell 拉起的陌生程序，值得多看一眼。&#10;• 连接：看方向和目标。只连网关=本地局域网行为；连公网 IP:443 本身正常，关键看这个进程"是谁"+是否持续高频。&#10;• 判定原则：单一迹象不下结论（未签名≠病毒），多项独立迹象组合才会升级为高风险；证据不足时显示"未知"，这是诚实而非敷衍。&#10;• 想深入：在总览表选中该进程看实时连接，或右键"查看相关事件"回溯它历史上的每次联网。</sys:String>
     <sys:String x:Key="ncv.run">开始网络体检</sys:String>
     <sys:String x:Key="ncv.running">检测中…</sys:String>
     <sys:String x:Key="ncv.note">检测会向 STUN 服务器与 ping 目标发送少量探测包，仅在点击按钮时进行，平时零流量。</sys:String>

@@ -727,6 +727,12 @@ public sealed class MainViewModel : VmBase, IDisposable
     private CancellationTokenSource? _checkCts;
     private double _peakUp, _peakDown;
 
+    public Verdict? GetVerdictFor(int pid) =>
+        _verdictsByPid.TryGetValue(pid, out var v) ? v : null;
+
+    public IReadOnlyList<ConnectionInfo> ConnectionsOf(int pid) =>
+        _connsByPid.TryGetValue(pid, out var l) ? l : Array.Empty<ConnectionInfo>();
+
     private static ScenarioRowVM ScenarioRow(string name, int score, bool unknown)
     {
         var (text, brush) = unknown

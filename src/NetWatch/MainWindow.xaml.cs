@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Hardcodet.Wpf.TaskbarNotification;
 using NetWatch.Services;
@@ -131,6 +132,54 @@ public partial class MainWindow : Window
     }
 
     // ---------- 事件流 / DNS 流右键动作 ----------
+
+    // ---------- 右键菜单：让动作作用于"右键的那一行"而不是"上次选中的行" ----------
+
+    private static DataGridRow? FindRowUnder(DependencyObject? start)
+    {
+        while (start != null && start is not DataGridRow)
+            start = start is Visual or System.Windows.Media.Media3D.Visual3D
+                ? VisualTreeHelper.GetParent(start)
+                : LogicalTreeHelper.GetParent(start);
+        return start as DataGridRow;
+    }
+
+    private void GridContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (sender is not DataGrid dg) return;
+        var row = FindRowUnder(e.OriginalSource as DependencyObject);
+        if (row?.Item != null)
+        {
+            dg.SelectedItem = row.Item;
+            row.IsSelected = true;
+        }
+    }
+
+    private void OpenDetailFor(DataGrid dg)
+    {
+        var pid = dg.SelectedItem switch
+        {
+            ProcessRowVM p => p.Pid,
+            EventRowVM ev when ev.Pid > 0 => ev.Pid,
+            DnsRowVM d when d.Pid > 0 => d.Pid,
+            _ => (int?)null,
+        };
+        if (pid == null) return;
+        var note = dg.SelectedItem switch
+        {
+            EventRowVM ev => $"{ev.TimeText} {ev.KindText} · {ev.Detail}",
+            DnsRowVM d => $"{d.TimeText} DNS 解析 · {d.Domain} → {d.Ips}",
+            _ => null,
+        };
+        var win = new DetailWindow(_vm, pid.Value, note) { Owner = this };
+        win.Show();
+    }
+
+    private void OnCmProcDetailOpen(object sender, RoutedEventArgs e)
+    {
+        if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid dg)
+            OpenDetailFor(dg);
+    }
 
     private void OnCmEventRelated(object sender, RoutedEventArgs e)
     {
