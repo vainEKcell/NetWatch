@@ -221,6 +221,14 @@ public partial class MainWindow : Window
             _vm.RunDnsCheckForTarget(null, d.Domain);
     }
 
+    private void OnCmDnsCopyDomain(object sender, RoutedEventArgs e)
+    {
+        if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: DnsRowVM d })
+        {
+            try { Clipboard.SetText(d.Domain); } catch { }
+        }
+    }
+
     // ---------- 数据与隐私设置（P3） ----------
 
     protected override void OnSourceInitialized(EventArgs e)

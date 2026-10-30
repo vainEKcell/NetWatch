@@ -14,7 +14,7 @@ public sealed record DnsStreamItem(DateTime TimeUtc, int Pid, string Domain, str
 public sealed class DnsService
 {
     private readonly ConcurrentQueue<DnsStreamItem> _stream = new();
-    private readonly ConcurrentQueue<(DateTime Time, RiskLevel Level, string Text)> _alerts = new();
+    private readonly ConcurrentQueue<(DateTime Time, RiskLevel Level, string Text, string? Domain)> _alerts = new();
 
     private readonly ConcurrentDictionary<string, (string Domain, DateTime Utc)> _ip2dom = new();
     private readonly ConcurrentDictionary<int, ConcurrentQueue<(string Domain, DateTime Utc)>> _pidDomains = new();
@@ -41,7 +41,7 @@ public sealed class DnsService
         _lastFlag[key] = DateTime.UtcNow;
 
         _alerts.Enqueue((e.TimeUtc, RiskLevel.Medium,
-            L10n.T("dnsalert.nonsystem", e.Pid, e.RemoteIp)));
+            L10n.T("dnsalert.nonsystem", e.Pid, e.RemoteIp), e.RemoteIp));
     }
 
     /// DNS-Client 解析结果（ETW 线程调用）
@@ -103,7 +103,7 @@ public sealed class DnsService
             _lastFlag[key] = DateTime.UtcNow;
             AlertCount++;
         }
-        _alerts.Enqueue((d.TimeUtc, lv, text));
+        _alerts.Enqueue((d.TimeUtc, lv, text, d.Domain));
         _stream.Enqueue(new DnsStreamItem(d.TimeUtc, d.Pid, d.Domain, string.Join(", ", d.Ips), !quiet, text));
     }
 
@@ -130,9 +130,9 @@ public sealed class DnsService
         return list;
     }
 
-    public List<(DateTime Time, RiskLevel Level, string Text)> DrainAlerts()
+    public List<(DateTime Time, RiskLevel Level, string Text, string? Domain)> DrainAlerts()
     {
-        var list = new List<(DateTime, RiskLevel, string)>();
+        var list = new List<(DateTime, RiskLevel, string, string?)>();
         while (_alerts.TryDequeue(out var a)) list.Add(a);
         return list;
     }

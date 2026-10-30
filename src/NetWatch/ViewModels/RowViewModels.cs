@@ -215,11 +215,12 @@ public sealed class EventRowVM : VmBase
         return vm;
     }
 
-    public static EventRowVM FromAlert(DateTime time, RiskLevel level, string text)
+    public static EventRowVM FromAlert(DateTime time, RiskLevel level, string text, string? domain = null)
     {
         var vm = new EventRowVM
         {
             Pid = -1,
+            Domain = domain,
             RawTime = time.ToLocalTime(),
             TimeText = time.ToLocalTime().ToString("HH:mm:ss"),
             KindText = L10n.T("kind.alert"),

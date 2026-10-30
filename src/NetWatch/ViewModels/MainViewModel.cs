@@ -469,8 +469,11 @@ public sealed class MainViewModel : VmBase, IDisposable
             }
             foreach (var a in Dns.DrainAlerts())
             {
-                AddEvent(EventRowVM.FromAlert(a.Time, a.Level, a.Text));
-                AddStoreRecord(new EventRecord { TimeUtc = a.Time, Kind = EventKindEx.Alert, Text = a.Text, Level = a.Level });
+                AddEvent(EventRowVM.FromAlert(a.Time, a.Level, a.Text, a.Domain));
+                AddStoreRecord(new EventRecord
+                {
+                    TimeUtc = a.Time, Kind = EventKindEx.Alert, Text = a.Text, Level = a.Level, Domain = a.Domain,
+                });
             }
 
             // 进程生命周期事件（内核 rundown/启动/退出）→ 实体库 + 事件库
