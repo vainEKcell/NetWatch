@@ -6,7 +6,7 @@ namespace NetWatch.Services;
 
 public sealed record StunAttempt(string Server, IPAddress MappedIp, int MappedPort);
 
-public sealed record NatResult(string Classification, string ExternalIp, IReadOnlyList<StunAttempt> Attempts, string Note);
+public sealed record NatResult(string Classification, string Kind, string ExternalIp, IReadOnlyList<StunAttempt> Attempts, string Note);
 
 /// STUN 最小客户端（RFC 5389 Binding Request）+ 实用 NAT 分类。
 /// 分类方法：同一个本地 socket 向两个不同 STUN 服务器发探测，
@@ -41,23 +41,23 @@ public static class StunClient
         }
 
         if (attempts.Count == 0)
-            return new NatResult(L10n.T("ncv.nat.fail"), "", attempts, "");
+            return new NatResult(L10n.T("ncv.nat.fail"), "fail", "", attempts, "");
 
         var localIp = udp.Client.LocalEndPoint != null
             ? ((IPEndPoint)udp.Client.LocalEndPoint).Address
             : IPAddress.None;
 
         if (localIp.Equals(extIp))
-            return new NatResult(L10n.T("ncv.nat.direct"), extIp.ToString() ?? "", attempts, "");
+            return new NatResult(L10n.T("ncv.nat.direct"), "direct", extIp.ToString() ?? "", attempts, "");
 
         if (attempts.Count >= 2)
         {
             if (extPort == attempts[1].MappedPort)
-                return new NatResult(L10n.T("ncv.nat.cone"), extIp.ToString() ?? "", attempts, "");
-            return new NatResult(L10n.T("ncv.nat.symmetric"), extIp.ToString() ?? "", attempts, "");
+                return new NatResult(L10n.T("ncv.nat.cone"), "cone", extIp.ToString() ?? "", attempts, "");
+            return new NatResult(L10n.T("ncv.nat.symmetric"), "symmetric", extIp.ToString() ?? "", attempts, "");
         }
 
-        return new NatResult(L10n.T("ncv.nat.insufficient"), extIp.ToString() ?? "", attempts, "");
+        return new NatResult(L10n.T("ncv.nat.insufficient"), "insufficient", extIp.ToString() ?? "", attempts, "");
     }
 
     private static async Task<(IPAddress Ip, int Port)?> SendBindingProbe(UdpClient udp, string host, int port, CancellationToken ct)

@@ -725,7 +725,6 @@ public sealed class MainViewModel : VmBase, IDisposable
     public string WifiSignalText { get; private set; } = "";
     public string WifiSsidText { get; private set; } = "";
     public string PeakText { get; private set; } = "";
-    public string BandwidthUsageText { get; private set; } = "";
     public ObservableCollection<ScenarioRowVM> ScenarioRows { get; } = new();
     public string CheckVerdictText { get; private set; } = "";
     public SolidColorBrush CheckVerdictBrush { get; private set; } = UiBrushes.Dim;
@@ -735,64 +734,53 @@ public sealed class MainViewModel : VmBase, IDisposable
     private double _peakUp, _peakDown;
     private long _linkBps;
 
-    // ================= 带宽测速（CDN 采样 + iperf3） =================
+    // ================= 带宽测速（自动挑节点拉流） =================
 
-    public ObservableCollection<SpeedRowVM> SpeedRows { get; } = new();
     public string SpeedBestText { get; private set; } = "";
+    public string SpeedNodeText { get; private set; } = "";
     public string UploadText { get; private set; } = "";
     public bool SpeedRunning { get; private set; }
     public string SpeedProgressText { get; private set; } = "";
-    public string Iperf3ResultText { get; private set; } = "";
-    public string Iperf3ServerText { get; set; } = "";
-    public string Iperf3PathText { get; set; } = "";
     public RelayCommand DownloadSpeedCommand { get; private set; } = null!;
     public RelayCommand UploadSpeedCommand { get; private set; } = null!;
-    public RelayCommand Iperf3RunCommand { get; private set; } = null!;
 
     private void RaiseSpeed() => RaiseAll(nameof(SpeedRunning), nameof(SpeedProgressText),
-        nameof(SpeedBestText), nameof(UploadText), nameof(Iperf3ResultText));
+        nameof(SpeedBestText), nameof(SpeedNodeText), nameof(UploadText));
 
     public async Task RunDownloadSpeedAsync()
     {
         if (SpeedRunning) return;
         SpeedRunning = true;
-        SpeedRows.Clear(); SpeedBestText = ""; UploadText = ""; Iperf3ResultText = "";
-        SpeedProgressText = L10n.T("sp.running");
-        RaiseAll(nameof(SpeedRunning), nameof(SpeedProgressText), nameof(SpeedBestText), nameof(UploadText), nameof(Iperf3ResultText));
+        SpeedBestText = ""; SpeedNodeText = ""; UploadText = "";
+        SpeedProgressText = L10n.T("sp.picking");
+        RaiseSpeed();
 
-        double best = 0;
         try
         {
-            foreach (var (name, url) in SpeedTestService.DownloadSources)
+            SpeedTestResult? best = null;
+            foreach (var i in SpeedTestService.SourceOrder())
             {
-                if (!SpeedRunning) break;
+                var (name, url) = SpeedTestService.DownloadSources[i];
                 SpeedProgressText = L10n.T("sp.testing", name);
                 Raise(nameof(SpeedProgressText));
                 try
                 {
                     var r = await SpeedTestService.RunDownloadAsync(name, url, seconds: 8, CancellationToken.None);
-                    SpeedRows.Add(new SpeedRowVM
-                    {
-                        Source = r.Source,
-                        AvgText = r.MbpsAvg > 0 ? $"{r.MbpsAvg:F1} Mbps（{r.MBPerSec:F1} MB/s）" : "—",
-                        PeakText = r.MbpsPeak > 0 ? $"{r.MbpsPeak:F1} Mbps" : "—",
-                        VolumeText = r.Seconds > 0 ? $"{r.MBTotal:F0} MB / {r.Seconds}s" : "—",
-                    });
-                    if (r.MbpsAvg > best) best = r.MbpsAvg;
+                    if (r.MbpsAvg > 0) { best = r; SpeedTestService.LastGoodSource = i; break; }
                 }
-                catch (OperationCanceledException) { break; }
-                catch (Exception ex)
-                {
-                    Log.Error($"测速源 {name} 失败", ex);
-                    SpeedRows.Add(new SpeedRowVM { Source = name, AvgText = "—", PeakText = "—",
-                        VolumeText = L10n.T("sp.source.failed") });
-                }
-                Raise(nameof(SpeedBestText));
+                catch (Exception ex) { Log.Error($"测速节点 {name} 这次没通", ex); }
             }
 
-            SpeedBestText = best > 0
-                ? L10n.T("sp.best", best >= 1000 ? $"{best / 1000:F2} Gbps" : $"{best:F0} Mbps", $"{best / 8.0:F1}")
-                : L10n.T("sp.all.failed");
+            if (best != null)
+            {
+                SpeedBestText = L10n.T("sp.best", $"{best.MbpsAvg:F1} Mbps", $"{best.MBPerSec:F1}");
+                SpeedNodeText = L10n.T("sp.node", best.Source, $"{best.MbpsPeak:F1}");
+            }
+            else
+            {
+                SpeedBestText = L10n.T("sp.all.failed");
+                SpeedNodeText = "";
+            }
             SpeedProgressText = L10n.T("sp.done");
         }
         finally
@@ -808,7 +796,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         SpeedRunning = true;
         SpeedProgressText = L10n.T("sp.upload.running");
         UploadText = "";
-        RaiseAll(nameof(SpeedRunning), nameof(SpeedProgressText), nameof(UploadText));
+        RaiseSpeed();
         try
         {
             double best = 0;
@@ -816,11 +804,10 @@ public sealed class MainViewModel : VmBase, IDisposable
             {
                 try
                 {
-                    // 2MB 载荷（跨境上行拥塞时大载荷必然超时）；回显端点接收有限，标注参考值
                     var r = await SpeedTestService.RunUploadAsync(name, url, megabytes: 2, CancellationToken.None);
                     if (r.MbpsAvg > best) best = r.MbpsAvg;
                 }
-                catch (Exception ex) { Log.Error($"上行测速 {name} 失败", ex); }
+                catch (Exception ex) { Log.Error($"上行测速 {name} 没成功", ex); }
             }
             UploadText = best > 0 ? L10n.T("sp.upload.result", best, best / 8.0) : L10n.T("sp.upload.failed");
         }
@@ -828,46 +815,6 @@ public sealed class MainViewModel : VmBase, IDisposable
         {
             SpeedRunning = false;
             SpeedProgressText = L10n.T("sp.done");
-            RaiseSpeed();
-        }
-    }
-
-    public async Task RunIperf3Async()
-    {
-        if (SpeedRunning) return;
-        var server = Iperf3ServerText.Trim();
-        if (server.Length == 0) { Iperf3ResultText = L10n.T("sp.iperf.no.server"); Raise(nameof(Iperf3ResultText)); return; }
-
-        Settings.Iperf3Server = server;
-        Settings.Iperf3Path = Iperf3PathText.Trim();
-        Settings.Save();
-
-        var exe = Settings.Iperf3Path.Length > 0 ? Settings.Iperf3Path : Iperf3Runner.AutoLocate();
-        if (exe == null || !File.Exists(exe)) { Iperf3ResultText = L10n.T("sp.iperf.no.exe"); Raise(nameof(Iperf3ResultText)); return; }
-
-        int port = 5201;
-        var host = server;
-        var ci = server.LastIndexOf(':');
-        if (ci > 0 && int.TryParse(server[(ci + 1)..], out var p)) { host = server[..ci]; port = p; }
-
-        SpeedRunning = true;
-        Iperf3ResultText = L10n.T("sp.iperf.running", host, port);
-        RaiseAll(nameof(SpeedRunning), nameof(Iperf3ResultText));
-        try
-        {
-            var r = await Iperf3Runner.RunAsync(exe, host, port, seconds: 10, CancellationToken.None);
-            Iperf3ResultText = r.Ok
-                ? L10n.T("sp.iperf.ok", r.UpMbps, r.UpMbps / 8.0, r.DownMbps, r.DownMbps / 8.0)
-                : L10n.T("sp.iperf.fail", r.Error);
-        }
-        catch (Exception ex)
-        {
-            Log.Error("iperf3 运行失败", ex);
-            Iperf3ResultText = L10n.T("sp.iperf.fail", ex.Message);
-        }
-        finally
-        {
-            SpeedRunning = false;
             RaiseSpeed();
         }
     }
@@ -914,7 +861,16 @@ public sealed class MainViewModel : VmBase, IDisposable
             var nat = await StunClient.DetectAsync(ct);
             NatText = nat.Classification;
             NatExternal = string.IsNullOrEmpty(nat.ExternalIp) ? "—" : nat.ExternalIp;
-            NatDetailText = string.Join("\n", nat.Attempts.Select(a => $"• {a.Server} → {a.MappedIp}:{a.MappedPort}"));
+            // 探测明细 + 该 NAT 类型的一句话解释（按 Kind 取，不拿显示文案猜）
+            NatDetailText = nat.Kind switch
+            {
+                "cone" => L10n.T("ncv.nat.cone.note"),
+                "symmetric" => L10n.T("ncv.nat.symmetric.note"),
+                "direct" => L10n.T("ncv.nat.direct.note"),
+                _ => "",
+            };
+            var probeLines = nat.Attempts.Select(a => $"• {a.Server} → {a.MappedIp}:{a.MappedPort}").ToList();
+            if (probeLines.Count > 0) NatDetailText = (NatDetailText + "\n" + string.Join("\n", probeLines)).Trim();
             RaiseAll(nameof(NatText), nameof(NatExternal), nameof(NatDetailText));
 
             // 2) 连接方式（Wi-Fi / 有线）
@@ -940,8 +896,8 @@ public sealed class MainViewModel : VmBase, IDisposable
             targets.Add("223.5.5.5");
             targets.Add("119.29.29.29");
 
-            int natScore = nat.Classification == L10n.T("ncv.nat.symmetric") ? 2
-                : nat.Classification == L10n.T("ncv.nat.cone") || nat.Classification == L10n.T("ncv.nat.direct") ? 0 : 1;
+            int natScore = nat.Kind == "symmetric" ? 2
+                : nat.Kind is "cone" or "direct" ? 0 : 1;
             var advices = new List<string>();
             if (natScore == 2) advices.Add(L10n.T("ncv.advise.nat.symmetric"));
             if (isWifi) advices.Add(L10n.T("ncv.advise.wifi"));
@@ -972,8 +928,7 @@ public sealed class MainViewModel : VmBase, IDisposable
             if (worstLoss >= 2) advices.Add(L10n.T("ncv.advise.loss"));
 
             // 分场景评价：不同场景对指标的敏感度不同
-            bool natUnknown = nat.Classification == L10n.T("ncv.nat.fail")
-                || nat.Classification == L10n.T("ncv.nat.insufficient");
+            bool natUnknown = nat.Kind is "fail" or "insufficient";
             int gaming = natUnknown ? -1 : Math.Max(natScore, Math.Max(jitterScore, Math.Max(lossScore, latencyScore)));
             int meeting = Math.Max(jitterScore, Math.Max(lossScore, latencyScore));
             int streaming = Math.Max(lossScore, latencyScore);
@@ -1006,6 +961,15 @@ public sealed class MainViewModel : VmBase, IDisposable
 
             CheckAdvices.Clear();
             foreach (var a in advices.Distinct()) CheckAdvices.Add("• " + a);
+            // 实时占用相对链路容量的比例，写进体检结论（占用卡已并入这里）
+            if (_linkBps > 0)
+            {
+                double upNow = 0, downNow = 0;
+                foreach (var s in Agg.Stats.Values) { upNow += s.UpSpeed; downNow += s.DownSpeed; }
+                var utilPct = Math.Max(upNow, downNow) * 8.0 / _linkBps * 100;
+                CheckAdvices.Add("• " + L10n.T("ncv.advise.util",
+                    Util.FormatSpeed(upNow), Util.FormatSpeed(downNow), utilPct));
+            }
             if (CheckAdvices.Count == 0) CheckAdvices.Add("• " + L10n.T("ncv.advise.allgood"));
             RaiseAll(nameof(CheckAdvices), nameof(CheckVerdictText), nameof(CheckVerdictBrush), nameof(MtuText));
         }
@@ -1024,12 +988,9 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     private void InitNetworkCheck()
     {
-        Iperf3ServerText = Settings.Iperf3Server;
-        Iperf3PathText = Settings.Iperf3Path;
         NetworkCheckCommand = new RelayCommand(() => _ = RunNetworkCheckAsync());
         DownloadSpeedCommand = new RelayCommand(() => _ = RunDownloadSpeedAsync());
         UploadSpeedCommand = new RelayCommand(() => _ = RunUploadSpeedAsync());
-        Iperf3RunCommand = new RelayCommand(() => _ = RunIperf3Async());
     }
 
     public void KillSelectedProcess() => KillPid(_selected?.Pid ?? -1);
@@ -1446,7 +1407,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         if (downNow > _peakDown) _peakDown = downNow;
         PeakText = L10n.T("ncv.peak.text", Util.FormatSpeed(_peakUp), Util.FormatSpeed(_peakDown));
 
-        // 实时带宽占用：当前真实上下行（ETW 口径）+ 相对链路容量的利用率
+        // 链路容量：每 30 tick 刷新一次，供体检结论算利用率
         if (_tickCount % 30 == 20)
         {
             try
@@ -1459,9 +1420,6 @@ public sealed class MainViewModel : VmBase, IDisposable
             }
             catch { }
         }
-        BandwidthUsageText = _linkBps > 0
-            ? $"↑ {Util.FormatSpeed(upNow)}　↓ {Util.FormatSpeed(downNow)}　·　占链路容量 ≈{Math.Max(upNow, downNow) * 8.0 / _linkBps * 100:0.#}%"
-            : $"↑ {Util.FormatSpeed(upNow)}　↓ {Util.FormatSpeed(downNow)}";
         SessionText = $"↑ {Util.FormatBytes(upAll)}　↓ {Util.FormatBytes(downAll)}";
         TrayText = $"↑ {Util.FormatSpeed(upNow)}   ↓ {Util.FormatSpeed(downNow)}";
         ConnCountText = L10n.T("st.connCount", _latestConns.Count(c => HideLoopback || !c.IsLoopback));
@@ -1482,7 +1440,6 @@ public sealed class MainViewModel : VmBase, IDisposable
 
         ChartPush?.Invoke(upNow, downNow);
         RaiseAll(nameof(TotalUpText), nameof(TotalDownText), nameof(SessionText), nameof(TrayText),
-            nameof(BandwidthUsageText),
             nameof(ConnCountText), nameof(BlockedCountText), nameof(BannerText), nameof(BannerVisible));
     }
 

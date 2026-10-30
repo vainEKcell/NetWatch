@@ -45,7 +45,7 @@ if ($nav) {
     $out += "nav ok"
 } else { $out += "nav NOT found" }
 
-$btn = Find-ByName $win "测下行（多源）" ([System.Windows.Automation.ControlType]::Button)
+$btn = Find-ByName $win "测下行" ([System.Windows.Automation.ControlType]::Button)
 if (-not $btn) { Set-Content "S:\ZWorker\NetWatch\verify\speedtest-result.txt" ($out -join '; ' + " | button not found"); exit 1 }
 ($btn.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)).Invoke()
 $out += "invoked"
@@ -62,7 +62,7 @@ while ((Get-Date) -lt $deadline) {
     if (($out -join [char]10) -match '下行最优|均失败') { break }
 }
 # 5) 测上行
-$btnUp = Find-ByName $win "测上行（参考值）" ([System.Windows.Automation.ControlType]::Button)
+$btnUp = Find-ByName $win "测上行" ([System.Windows.Automation.ControlType]::Button)
 if ($btnUp) {
     ($btnUp.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)).Invoke()
     $out += "up-invoked"
@@ -71,8 +71,8 @@ if ($btnUp) {
         Start-Sleep -Seconds 5
         $tc = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Text)
         $els = $win.FindAll([System.Windows.Automation.TreeScope]::Descendants, $tc)
-        foreach ($el in $els) { $n = $el.Current.Name; if ($n -match "上行") { $out += $n } }
-        if (($out -join [char]10) -match "上行参考值|上行测速失败") { break }
+        foreach ($el in $els) { $n = $el.Current.Name; if ($n -match "上行参考值|上行没测成") { $out += $n } }
+        if (($out -join [char]10) -match "上行参考值|上行没测成") { break }
     }
 }
 Set-Content -Path "S:/ZWorker/NetWatch/verify/speedtest-result.txt" -Value ($out -join [Environment]::NewLine) -Encoding UTF8

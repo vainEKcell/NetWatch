@@ -22,8 +22,8 @@ public static class SpeedTestService
 {
     internal static readonly (string Name, string Url)[] DownloadSources =
     {
-        ("微信 CDN", "https://dldir1.qq.com/weixin/Windows/WeChatSetup.exe"),
         ("华为云镜像", "https://mirrors.huaweicloud.com/ubuntu-releases/24.04/ubuntu-24.04.4-desktop-amd64.iso"),
+        ("微信 CDN", "https://dldir1.qq.com/weixin/Windows/WeChatSetup.exe"),
         ("中科大镜像", "https://mirrors.ustc.edu.cn/ubuntu-releases/24.04/ubuntu-24.04.4-desktop-amd64.iso"),
     };
 
@@ -31,6 +31,20 @@ public static class SpeedTestService
     {
         ("Cloudflare", "https://speed.cloudflare.com/__up"),
     };
+
+    /// 上次测通的节点下标——下次优先用它（节点可用性随时段变，动态主源 + 顺序备用）
+    internal static int LastGoodSource = -1;
+
+    /// 从源池取本次尝试顺序：上次测通的优先，其余按固定顺序兜底
+    internal static List<int> SourceOrder()
+    {
+        var order = new List<int>();
+        if (LastGoodSource >= 0 && LastGoodSource < DownloadSources.Length)
+            order.Add(LastGoodSource);
+        for (int i = 0; i < DownloadSources.Length; i++)
+            if (!order.Contains(i)) order.Add(i);
+        return order;
+    }
 
     /// 校验目标为公网 https 主机（拒绝 localhost/环回/私有/保留地址）
     public static void ValidatePublicHttps(Uri uri)

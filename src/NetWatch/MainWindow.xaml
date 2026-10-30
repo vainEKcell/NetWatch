@@ -506,119 +506,146 @@
 
             <!-- ========== 4. 网络体检 ========== -->
             <Grid x:Name="PageNetCheck" Visibility="Collapsed">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- 运行行：按钮 + 进度 + 一句说明 -->
+                <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="{DynamicResource ncv.run}" Command="{Binding NetworkCheckCommand}"
+                                IsEnabled="{Binding CheckRunning, Converter={StaticResource InvBool}}"/>
+                        <TextBlock Text="{Binding CheckProgressText}" Foreground="{StaticResource DimBrush}"
+                                   VerticalAlignment="Center" Margin="14,0,0,0"/>
+                    </StackPanel>
+                    <TextBlock Text="{DynamicResource ncv.note}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                               TextWrapping="Wrap" Margin="0,5,0,0"/>
+                </StackPanel>
+
+                <!-- 主体：左右两列，一屏放完不滚动 -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 左列：NAT / 场景分析 / 建议 -->
+                    <StackPanel Grid.Column="0" Margin="0,0,5,0">
                         <Border Style="{StaticResource Card}" Margin="0,0,0,8">
                             <StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Content="{DynamicResource ncv.run}" Command="{Binding NetworkCheckCommand}"
-                                            IsEnabled="{Binding CheckRunning, Converter={StaticResource InvBool}}"/>
-                                    <TextBlock Text="{Binding CheckProgressText}" Foreground="{StaticResource DimBrush}"
-                                               VerticalAlignment="Center" Margin="14,0,0,0"/>
-                                </StackPanel>
-                                <TextBlock Text="{DynamicResource ncv.note}" Foreground="{StaticResource DimBrush}"
-                                           TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                <TextBlock Text="{DynamicResource ncv.nat}" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{Binding NatText}" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{DynamicResource ncv.external}" Foreground="{StaticResource DimBrush}" FontSize="11" VerticalAlignment="Top"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding NatExternal}" Foreground="{StaticResource DimBrush}"
+                                               FontSize="11" Margin="6,0,0,0" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+                                <TextBlock Text="{Binding NatDetailText}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                           TextWrapping="Wrap" MaxHeight="90" TextTrimming="CharacterEllipsis" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource Card}" Margin="0,0,0,8">
                             <StackPanel>
-                                <TextBlock Text="{DynamicResource ncv.usage}" Style="{StaticResource SectionHeader}"/>
-                                <TextBlock Text="{Binding BandwidthUsageText}" FontSize="14" TextWrapping="Wrap"/>
-                                <TextBlock Text="{DynamicResource ncv.note}" Foreground="{DynamicResource DimBrush}"
-                                           TextWrapping="Wrap" Margin="0,4,0,0" Visibility="Collapsed"/>
+                                <TextBlock Text="{DynamicResource ncv.verdict}" Style="{StaticResource SectionHeader}"/>
+                                <ItemsControl ItemsSource="{Binding ScenarioRows}" Margin="0,2,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                <TextBlock Text="{Binding Name}" Width="110" VerticalAlignment="Center" FontSize="12"/>
+                                                <TextBlock Text="{Binding Verdict}" Foreground="{Binding Brush}"
+                                                           FontWeight="SemiBold" VerticalAlignment="Center" FontSize="12"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="{Binding PeakText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Border>
 
-                        <!-- 带宽测速：多源 CDN 采样 + iperf3 黄金标准 -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource ncv.advise}" Style="{StaticResource SectionHeader}"/>
+                                <ItemsControl ItemsSource="{Binding CheckAdvices}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2" FontSize="11"
+                                                       Foreground="{DynamicResource DimBrush}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- 右列：带宽测速 / 连接信息 / 延迟 -->
+                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
                         <Border Style="{StaticResource Card}" Margin="0,0,0,8">
                             <StackPanel>
                                 <TextBlock Text="{DynamicResource sp.title}" Style="{StaticResource SectionHeader}"/>
-                                <TextBlock Text="{DynamicResource sp.desc}" Foreground="{DynamicResource DimBrush}"
-                                           TextWrapping="Wrap" Margin="0,2,0,8"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,4">
                                     <Button Content="{DynamicResource sp.run.down}" Command="{Binding DownloadSpeedCommand}"
                                             IsEnabled="{Binding SpeedRunning, Converter={StaticResource InvBool}}"/>
                                     <Button Content="{DynamicResource sp.run.up}" Command="{Binding UploadSpeedCommand}" Margin="8,0,0,0"
                                             IsEnabled="{Binding SpeedRunning, Converter={StaticResource InvBool}}"/>
-                                    <TextBlock Text="{Binding SpeedProgressText}" Foreground="{DynamicResource DimBrush}"
-                                               VerticalAlignment="Center" Margin="14,0,0,0"/>
+                                    <TextBlock Text="{Binding SpeedProgressText}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                               VerticalAlignment="Center" Margin="10,0,0,0"/>
                                 </StackPanel>
-                                <DataGrid ItemsSource="{Binding SpeedRows}" CanUserSortColumns="False" RowHeight="26" MaxHeight="170">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{Binding [sp.col.source], Source={x:Static services:Loc.Instance}}" Binding="{Binding Source}" Width="1.2*"/>
-                                        <DataGridTextColumn Header="{Binding [sp.col.avg], Source={x:Static services:Loc.Instance}}" Binding="{Binding AvgText}" Width="1.4*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [sp.col.peak], Source={x:Static services:Loc.Instance}}" Binding="{Binding PeakText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [sp.col.volume], Source={x:Static services:Loc.Instance}}" Binding="{Binding VolumeText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                                <TextBlock Text="{Binding SpeedBestText}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,6,0,0"/>
-                                <TextBlock Text="{Binding UploadText}" Foreground="{DynamicResource DimBrush}" TextWrapping="Wrap" Margin="0,2,0,0"/>
-                                <Separator Margin="0,10"/>
-                                <TextBlock Text="{DynamicResource sp.iperf.title}" Style="{StaticResource SectionHeader}"/>
-                                <TextBlock Text="{DynamicResource sp.iperf.desc}" Foreground="{DynamicResource DimBrush}"
-                                           TextWrapping="Wrap" Margin="0,2,0,8"/>
-                                <WrapPanel>
-                                    <TextBlock Text="{DynamicResource sp.iperf.server}" VerticalAlignment="Center"/>
-                                    <TextBox Text="{Binding Iperf3ServerText, UpdateSourceTrigger=PropertyChanged}" Width="190" Margin="6,0,0,0"/>
-                                    <TextBlock Text="{DynamicResource sp.iperf.path}" VerticalAlignment="Center" Margin="14,0,0,0"/>
-                                    <TextBox Text="{Binding Iperf3PathText, UpdateSourceTrigger=PropertyChanged}" Width="210" Margin="6,0,0,0"/>
-                                    <Button Content="{DynamicResource sp.iperf.run}" Command="{Binding Iperf3RunCommand}" Margin="8,0,0,0"
-                                            IsEnabled="{Binding SpeedRunning, Converter={StaticResource InvBool}}"/>
-                                </WrapPanel>
-                                <TextBlock Text="{Binding Iperf3ResultText}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                <TextBlock Text="{Binding SpeedBestText}" FontSize="15" FontWeight="Bold" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding SpeedNodeText}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                <TextBlock Text="{Binding UploadText}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                <TextBlock Text="{DynamicResource sp.desc}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                           TextWrapping="Wrap" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Border>
 
-                        <Grid Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,6,0">
-                                <StackPanel>
-                                    <TextBlock Text="{DynamicResource ncv.nat}" Style="{StaticResource SectionHeader}"/>
-                                    <TextBlock Text="{Binding NatText}" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
-                                    <TextBlock Text="{DynamicResource ncv.external}" Style="{StaticResource SectionHeader}"/>
-                                    <TextBlock Text="{Binding NatExternal}" Foreground="{DynamicResource DimBrush}"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Grid.Column="1" Style="{StaticResource Card}" Margin="6,0,0,0">
-                                <StackPanel>
-                                    <TextBlock Text="{DynamicResource ncv.link}" Style="{StaticResource SectionHeader}"/>
-                                    <TextBlock Text="{Binding LinkTypeText}" FontSize="16" FontWeight="Bold"/>
-                                    <TextBlock Text="{DynamicResource ncv.wifi.signal}" Style="{StaticResource SectionHeader}"/>
-                                    <TextBlock Text="{Binding WifiSignalText}" Foreground="{DynamicResource DimBrush}"/>
-                                    <TextBlock Text="{DynamicResource ncv.wifi.ssid}" Style="{StaticResource SectionHeader}"/>
-                                    <TextBlock Text="{Binding WifiSsidText}" Foreground="{DynamicResource DimBrush}"
-                                               TextTrimming="CharacterEllipsis" ToolTip="{Binding WifiSsidText}"/>
-                                    <TextBlock Text="{DynamicResource ncv.linkspeed}" Style="{StaticResource SectionHeader}"/>
-                                    <TextBlock Text="{Binding LinkSpeedText}" Foreground="{DynamicResource DimBrush}"/>
-                                    <TextBlock Text="{DynamicResource ncv.mtu}" Style="{StaticResource SectionHeader}"/>
-                                    <TextBlock Text="{Binding MtuText}" Foreground="{DynamicResource DimBrush}" TextWrapping="Wrap"/>
-                                    <TextBlock Text="{DynamicResource ncv.nat.detail}" Style="{StaticResource SectionHeader}"/>
-                                    <TextBlock Text="{Binding NatDetailText}" Foreground="{DynamicResource DimBrush}"
-                                               TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-
                         <Border Style="{StaticResource Card}" Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="{DynamicResource ncv.link}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                <TextBlock Grid.Column="1" Text="{Binding LinkTypeText}" FontSize="11" Margin="10,1,0,1"/>
+                                <TextBlock Grid.Row="1" Text="{DynamicResource ncv.linkspeed}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LinkSpeedText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="10,1,0,1"/>
+                                <TextBlock Grid.Row="2" Text="{DynamicResource ncv.wifi.signal}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding WifiSignalText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="10,1,0,1"/>
+                                <TextBlock Grid.Row="3" Text="{DynamicResource ncv.wifi.ssid}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding WifiSsidText}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                           Margin="10,1,0,1" TextTrimming="CharacterEllipsis" ToolTip="{Binding WifiSsidText}"/>
+                                <TextBlock Grid.Row="4" Text="{DynamicResource ncv.mtu}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding MtuText}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                           Margin="10,1,0,1" TextTrimming="CharacterEllipsis" ToolTip="{Binding MtuText}"/>
+                            </Grid>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}"
                                            Text="{DynamicResource ncv.ping}"/>
-                                <DataGrid ItemsSource="{Binding PingRows}" CanUserSortColumns="False" RowHeight="28">
+                                <DataGrid ItemsSource="{Binding PingRows}" CanUserSortColumns="False" RowHeight="24" FontSize="11">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="{Binding [col.pingTarget], Source={x:Static services:Loc.Instance}}" Binding="{Binding Target}" Width="1.4*"/>
-                                        <DataGridTextColumn Header="{Binding [col.min], Source={x:Static services:Loc.Instance}}" Binding="{Binding MinText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
                                         <DataGridTextColumn Header="{Binding [col.avg], Source={x:Static services:Loc.Instance}}" Binding="{Binding AvgText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.max], Source={x:Static services:Loc.Instance}}" Binding="{Binding MaxText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
                                         <DataGridTextColumn Header="{Binding [col.jitter], Source={x:Static services:Loc.Instance}}" Binding="{Binding JitterText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
                                         <DataGridTextColumn Header="{Binding [col.loss], Source={x:Static services:Loc.Instance}}" Binding="{Binding LossText}" Width="*"
                                                             ElementStyle="{StaticResource CellRight}"/>
                                         <DataGridTextColumn Header="{Binding [col.p95], Source={x:Static services:Loc.Instance}}" Binding="{Binding P95Text}" Width="*"
                                                             ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTemplateColumn Header="{Binding [col.quality], Source={x:Static services:Loc.Instance}}" Width="70">
+                                        <DataGridTemplateColumn Header="{Binding [col.quality], Source={x:Static services:Loc.Instance}}" Width="60">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding QualityText}" Foreground="{Binding QualityBrush}" HorizontalAlignment="Right"/>
@@ -629,36 +656,8 @@
                                 </DataGrid>
                             </DockPanel>
                         </Border>
-
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource ncv.verdict}" Style="{StaticResource SectionHeader}"/>
-                                <ItemsControl ItemsSource="{Binding ScenarioRows}" Margin="0,2,0,0">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" Margin="0,3">
-                                                <TextBlock Text="{Binding Name}" Width="180" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{Binding Verdict}" Foreground="{Binding Brush}"
-                                                           FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                <TextBlock Text="{DynamicResource ncv.peak}" Style="{StaticResource SectionHeader}"/>
-                                <TextBlock Text="{Binding PeakText}" Foreground="{DynamicResource DimBrush}"/>
-                                <TextBlock Text="{DynamicResource ncv.advise}" Style="{StaticResource SectionHeader}"/>
-                                <ItemsControl ItemsSource="{Binding CheckAdvices}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2"
-                                                       Foreground="{DynamicResource DimBrush}"/>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                        </Border>
                     </StackPanel>
-                </ScrollViewer>
+                </Grid>
             </Grid>
 
             <!-- ========== 5. 监听端口 ========== -->

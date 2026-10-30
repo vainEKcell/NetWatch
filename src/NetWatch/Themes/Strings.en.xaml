@@ -176,15 +176,17 @@
     <sys:String x:Key="dw.guide">• Signature: valid = vendor-certified, generally safe; unsigned = many legit open-source apps too, but no stable identity; invalid = file changed after signing — pay attention.&#10;• Path: system processes only live in System32; temp/download directories deserve a second look (your own downloaded tools are fine).&#10;• Parent: desktop apps are launched by explorer, services by services; an unknown app launched by cmd/powershell deserves a closer look.&#10;• Connections: direction and target matter. Gateway-only = local LAN behavior; a public IP:443 connection is normal by itself — what matters is WHO the process is and whether it's persistent/frequent.&#10;• Principle: never conclude from a single signal (unsigned ≠ virus); multiple independent signals escalate to high risk; insufficient evidence shows "Unknown" honestly.&#10;• Go deeper: select the process in Overview for live connections, or right-click "Related events" to trace its history.</sys:String>
     <sys:String x:Key="ncv.run">Run network check</sys:String>
     <sys:String x:Key="ncv.running">Checking…</sys:String>
-    <sys:String x:Key="ncv.note">The check sends a few probe packets to STUN servers and ping targets — only when clicked, zero background traffic.</sys:String>
+    <sys:String x:Key="ncv.note">One click is all: NAT probe, gateway and public pings, then a short download test. About half a minute, and it only uses the network while it runs.</sys:String>
     <sys:String x:Key="ncv.nat">NAT type</sys:String>
     <sys:String x:Key="ncv.external">External address</sys:String>
-    <sys:String x:Key="ncv.nat.direct">Direct (no NAT)</sys:String>
-    <sys:String x:Key="ncv.nat.cone">Cone NAT</sys:String>
-    <sys:String x:Key="ncv.nat.symmetric">Symmetric NAT</sys:String>
+    <sys:String x:Key="ncv.nat.direct">Direct internet · no NAT</sys:String>
+    <sys:String x:Key="ncv.nat.cone.note">Full cone or restricted cone — both are gaming-friendly; nearly all home routers are one of these (telling A from B needs RFC 5780 support).</sys:String>
+    <sys:String x:Key="ncv.nat.symmetric.note">Symmetric — a new port for every target, which hurts P2P and voice. Wired + full-cone helps for online games.</sys:String>
+    <sys:String x:Key="ncv.nat.direct.note">Your device sits directly on the public internet; no NAT in the way.</sys:String>
+    <sys:String x:Key="ncv.nat.cone">Cone NAT · NAT A/B</sys:String>
+    <sys:String x:Key="ncv.nat.symmetric">Symmetric NAT · NAT D</sys:String>
     <sys:String x:Key="ncv.nat.insufficient">Insufficient data (only one STUN server reachable)</sys:String>
     <sys:String x:Key="ncv.nat.fail">Cannot detect (no STUN response — if a proxy/TUN mode is on, UDP probes may be intercepted; try disabling it briefly)</sys:String>
-    <sys:String x:Key="ncv.nat.detail">Probe details</sys:String>
     <sys:String x:Key="ncv.ping">Latency / jitter / loss</sys:String>
     <sys:String x:Key="col.pingTarget">Target</sys:String>
     <sys:String x:Key="col.min">Min</sys:String>
@@ -210,7 +212,7 @@
     <sys:String x:Key="ncv.link">Link type</sys:String>
     <sys:String x:Key="ncv.wifi">Wireless (Wi-Fi)</sys:String>
     <sys:String x:Key="ncv.eth">Ethernet</sys:String>
-    <sys:String x:Key="ncv.verdict">Scenario ratings</sys:String>
+    <sys:String x:Key="ncv.verdict">Scenario analysis</sys:String>
     <sys:String x:Key="ncv.v.excellent">Excellent</sys:String>
     <sys:String x:Key="ncv.v.good">Good</sys:String>
     <sys:String x:Key="ncv.v.fair">Fair</sys:String>
@@ -221,7 +223,6 @@
     <sys:String x:Key="ncv.sc.streaming">HD streaming / large transfers</sys:String>
     <sys:String x:Key="ncv.sc.browsing">Everyday browsing</sys:String>
     <sys:String x:Key="ncv.peak">Session peak speeds</sys:String>
-    <sys:String x:Key="ncv.usage">Current up/down usage (live, ETW-based)</sys:String>
     <sys:String x:Key="ncv.peak.text">↑ {0}　↓ {1}</sys:String>
     <sys:String x:Key="ncv.wifi.signal">Wi-Fi signal strength</sys:String>
     <sys:String x:Key="ncv.wifi.ssid">Network name (SSID)</sys:String>
@@ -233,6 +234,7 @@
     <sys:String x:Key="ncv.advise.jitter">Visible jitter — usually Wi-Fi interference or bandwidth contention</sys:String>
     <sys:String x:Key="ncv.advise.loss">Packet loss detected — check cabling, router and ISP line</sys:String>
     <sys:String x:Key="ncv.advise.allgood">All metrics healthy — you're good to go online</sys:String>
+    <sys:String x:Key="ncv.advise.util">Live usage right now: ↑ {0} ↓ {1}, roughly {2:0.#}% of your link capacity.</sys:String>
     <sys:String x:Key="ncv.checking.nat">Probing NAT type (STUN)…</sys:String>
     <sys:String x:Key="ncv.checking.ping">Pinging {0}…</sys:String>
     <sys:String x:Key="ncv.fail">Check failed: {0}</sys:String>
@@ -395,30 +397,16 @@
     <sys:String x:Key="msg.cleanup">Cleanup</sys:String>
     <sys:String x:Key="msg.ok">OK</sys:String>
     <sys:String x:Key="sp.title">Bandwidth Speed Test</sys:String>
-    <sys:String x:Key="sp.desc">Multi-source CDN sampling for download (best-of), upload via public echo endpoints (reference only). Tests run over a direct connection (system proxy bypassed) to reflect the physical link. For accurate up/down, configure an iperf3 server below (golden standard).</sys:String>
-    <sys:String x:Key="sp.run.down">Test download (multi-source)</sys:String>
-    <sys:String x:Key="sp.run.up">Test upload (reference)</sys:String>
-    <sys:String x:Key="sp.running">Preparing…</sys:String>
+    <sys:String x:Key="sp.desc">It picks a reachable node, streams for a few seconds, skips the ramp-up, and shows average and peak. Runs over a direct connection (proxy bypassed). Upload is a reference number — public endpoints accept slowly.</sys:String>
+    <sys:String x:Key="sp.picking">Looking for a reachable node…</sys:String>
+    <sys:String x:Key="sp.node">Node: {0} · peak {1} Mbps · results drift with the time of day, that's normal</sys:String>
+    <sys:String x:Key="sp.run.down">Test download</sys:String>
+    <sys:String x:Key="sp.run.up">Test upload</sys:String>
     <sys:String x:Key="sp.testing">Streaming from {0}…</sys:String>
     <sys:String x:Key="sp.done">Done</sys:String>
-    <sys:String x:Key="sp.best">Best download: {0} ({1} MB/s). Best-of across sources approximates real throughput to that source.</sys:String>
-    <sys:String x:Key="sp.all.failed">All speed test sources failed (check network or proxy)</sys:String>
-    <sys:String x:Key="sp.source.failed">failed</sys:String>
+    <sys:String x:Key="sp.best">Download {0} ({1} MB/s)</sys:String>
+    <sys:String x:Key="sp.all.failed">None of the nodes answered this time — try again in a bit</sys:String>
     <sys:String x:Key="sp.upload.running">Testing upload…</sys:String>
-    <sys:String x:Key="sp.upload.result">Upload (reference): {0:F1} Mbps ({1:F1} MB/s) — limited by public echo endpoint</sys:String>
-    <sys:String x:Key="sp.upload.failed">Upload test failed</sys:String>
-    <sys:String x:Key="sp.iperf.title">iperf3 (golden standard)</sys:String>
-    <sys:String x:Key="sp.iperf.desc">Run "iperf3 -s" on the peer machine, then enter it here (e.g. 192.168.1.2 or 192.168.1.2:5201). Put iperf3.exe on the desktop for auto-detection.</sys:String>
-    <sys:String x:Key="sp.iperf.server">Server</sys:String>
-    <sys:String x:Key="sp.iperf.path">iperf3.exe path (empty = auto-find on desktop)</sys:String>
-    <sys:String x:Key="sp.iperf.run">Run</sys:String>
-    <sys:String x:Key="sp.iperf.no.server">Enter an iperf3 server address first</sys:String>
-    <sys:String x:Key="sp.iperf.no.exe">iperf3.exe not found; enter its full path above</sys:String>
-    <sys:String x:Key="sp.iperf.running">iperf3 running ({0}:{1})…</sys:String>
-    <sys:String x:Key="sp.iperf.ok">iperf3 done: up {0:F1} Mbps ({1:F1} MB/s) | down {2:F1} Mbps ({3:F1} MB/s)</sys:String>
-    <sys:String x:Key="sp.iperf.fail">iperf3 failed: {0}</sys:String>
-    <sys:String x:Key="sp.col.source">Source</sys:String>
-    <sys:String x:Key="sp.col.avg">Avg download</sys:String>
-    <sys:String x:Key="sp.col.peak">Peak</sys:String>
-    <sys:String x:Key="sp.col.volume">Volume/Duration</sys:String>
+    <sys:String x:Key="sp.upload.result">Upload {0:F1} Mbps ({1:F1} MB/s) — public endpoint accepts slowly, treat as a reference</sys:String>
+    <sys:String x:Key="sp.upload.failed">Upload didn't go through (endpoint unresponsive); download results are unaffected</sys:String>
 </ResourceDictionary>
