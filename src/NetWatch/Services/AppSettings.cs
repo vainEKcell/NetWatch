@@ -21,6 +21,11 @@ public sealed class AppSettings
     /// 界面主题：auto（跟随系统）/ dark / light
     public string Theme { get; set; } = "auto";
 
+    /// iperf3 服务器地址（host 或 host:port）
+    public string Iperf3Server { get; set; } = "";
+    /// iperf3.exe 路径（空 = 自动在桌面寻找）
+    public string Iperf3Path { get; set; } = "";
+
     /// 用户允许名单（SoftwareIdentity 键）。处置层：用户的信任决定优先于引擎判定。
     public List<string> TrustedIdentityKeys { get; set; } = new();
     /// 允许名单的展示名（键 → 名称）

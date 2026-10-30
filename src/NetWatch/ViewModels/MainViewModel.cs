@@ -735,6 +735,143 @@ public sealed class MainViewModel : VmBase, IDisposable
     private double _peakUp, _peakDown;
     private long _linkBps;
 
+    // ================= 带宽测速（CDN 采样 + iperf3） =================
+
+    public ObservableCollection<SpeedRowVM> SpeedRows { get; } = new();
+    public string SpeedBestText { get; private set; } = "";
+    public string UploadText { get; private set; } = "";
+    public bool SpeedRunning { get; private set; }
+    public string SpeedProgressText { get; private set; } = "";
+    public string Iperf3ResultText { get; private set; } = "";
+    public string Iperf3ServerText { get; set; } = "";
+    public string Iperf3PathText { get; set; } = "";
+    public RelayCommand DownloadSpeedCommand { get; private set; } = null!;
+    public RelayCommand UploadSpeedCommand { get; private set; } = null!;
+    public RelayCommand Iperf3RunCommand { get; private set; } = null!;
+
+    private void RaiseSpeed() => RaiseAll(nameof(SpeedRunning), nameof(SpeedProgressText),
+        nameof(SpeedBestText), nameof(UploadText), nameof(Iperf3ResultText));
+
+    public async Task RunDownloadSpeedAsync()
+    {
+        if (SpeedRunning) return;
+        SpeedRunning = true;
+        SpeedRows.Clear(); SpeedBestText = ""; UploadText = ""; Iperf3ResultText = "";
+        SpeedProgressText = L10n.T("sp.running");
+        RaiseAll(nameof(SpeedRunning), nameof(SpeedProgressText), nameof(SpeedBestText), nameof(UploadText), nameof(Iperf3ResultText));
+
+        double best = 0;
+        try
+        {
+            foreach (var (name, url) in SpeedTestService.DownloadSources)
+            {
+                if (!SpeedRunning) break;
+                SpeedProgressText = L10n.T("sp.testing", name);
+                Raise(nameof(SpeedProgressText));
+                try
+                {
+                    var r = await SpeedTestService.RunDownloadAsync(name, url, seconds: 8, CancellationToken.None);
+                    SpeedRows.Add(new SpeedRowVM
+                    {
+                        Source = r.Source,
+                        AvgText = r.MbpsAvg > 0 ? $"{r.MbpsAvg:F1} Mbps（{r.MBPerSec:F1} MB/s）" : "—",
+                        PeakText = r.MbpsPeak > 0 ? $"{r.MbpsPeak:F1} Mbps" : "—",
+                        VolumeText = r.Seconds > 0 ? $"{r.MBTotal:F0} MB / {r.Seconds}s" : "—",
+                    });
+                    if (r.MbpsAvg > best) best = r.MbpsAvg;
+                }
+                catch (OperationCanceledException) { break; }
+                catch (Exception ex)
+                {
+                    Log.Error($"测速源 {name} 失败", ex);
+                    SpeedRows.Add(new SpeedRowVM { Source = name, AvgText = "—", PeakText = "—",
+                        VolumeText = L10n.T("sp.source.failed") });
+                }
+                Raise(nameof(SpeedBestText));
+            }
+
+            SpeedBestText = best > 0
+                ? L10n.T("sp.best", best >= 1000 ? $"{best / 1000:F2} Gbps" : $"{best:F0} Mbps", $"{best / 8.0:F1}")
+                : L10n.T("sp.all.failed");
+            SpeedProgressText = L10n.T("sp.done");
+        }
+        finally
+        {
+            SpeedRunning = false;
+            RaiseSpeed();
+        }
+    }
+
+    public async Task RunUploadSpeedAsync()
+    {
+        if (SpeedRunning) return;
+        SpeedRunning = true;
+        SpeedProgressText = L10n.T("sp.upload.running");
+        UploadText = "";
+        RaiseAll(nameof(SpeedRunning), nameof(SpeedProgressText), nameof(UploadText));
+        try
+        {
+            double best = 0;
+            foreach (var (name, url) in SpeedTestService.UploadEndpoints)
+            {
+                try
+                {
+                    // 2MB 载荷（跨境上行拥塞时大载荷必然超时）；回显端点接收有限，标注参考值
+                    var r = await SpeedTestService.RunUploadAsync(name, url, megabytes: 2, CancellationToken.None);
+                    if (r.MbpsAvg > best) best = r.MbpsAvg;
+                }
+                catch (Exception ex) { Log.Error($"上行测速 {name} 失败", ex); }
+            }
+            UploadText = best > 0 ? L10n.T("sp.upload.result", best, best / 8.0) : L10n.T("sp.upload.failed");
+        }
+        finally
+        {
+            SpeedRunning = false;
+            SpeedProgressText = L10n.T("sp.done");
+            RaiseSpeed();
+        }
+    }
+
+    public async Task RunIperf3Async()
+    {
+        if (SpeedRunning) return;
+        var server = Iperf3ServerText.Trim();
+        if (server.Length == 0) { Iperf3ResultText = L10n.T("sp.iperf.no.server"); Raise(nameof(Iperf3ResultText)); return; }
+
+        Settings.Iperf3Server = server;
+        Settings.Iperf3Path = Iperf3PathText.Trim();
+        Settings.Save();
+
+        var exe = Settings.Iperf3Path.Length > 0 ? Settings.Iperf3Path : Iperf3Runner.AutoLocate();
+        if (exe == null || !File.Exists(exe)) { Iperf3ResultText = L10n.T("sp.iperf.no.exe"); Raise(nameof(Iperf3ResultText)); return; }
+
+        int port = 5201;
+        var host = server;
+        var ci = server.LastIndexOf(':');
+        if (ci > 0 && int.TryParse(server[(ci + 1)..], out var p)) { host = server[..ci]; port = p; }
+
+        SpeedRunning = true;
+        Iperf3ResultText = L10n.T("sp.iperf.running", host, port);
+        RaiseAll(nameof(SpeedRunning), nameof(Iperf3ResultText));
+        try
+        {
+            var r = await Iperf3Runner.RunAsync(exe, host, port, seconds: 10, CancellationToken.None);
+            Iperf3ResultText = r.Ok
+                ? L10n.T("sp.iperf.ok", r.UpMbps, r.UpMbps / 8.0, r.DownMbps, r.DownMbps / 8.0)
+                : L10n.T("sp.iperf.fail", r.Error);
+        }
+        catch (Exception ex)
+        {
+            Log.Error("iperf3 运行失败", ex);
+            Iperf3ResultText = L10n.T("sp.iperf.fail", ex.Message);
+        }
+        finally
+        {
+            SpeedRunning = false;
+            RaiseSpeed();
+        }
+    }
+
     public Verdict? GetVerdictFor(int pid) =>
         _verdictsByPid.TryGetValue(pid, out var v) ? v : null;
 
@@ -887,7 +1024,12 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     private void InitNetworkCheck()
     {
+        Iperf3ServerText = Settings.Iperf3Server;
+        Iperf3PathText = Settings.Iperf3Path;
         NetworkCheckCommand = new RelayCommand(() => _ = RunNetworkCheckAsync());
+        DownloadSpeedCommand = new RelayCommand(() => _ = RunDownloadSpeedAsync());
+        UploadSpeedCommand = new RelayCommand(() => _ = RunUploadSpeedAsync());
+        Iperf3RunCommand = new RelayCommand(() => _ = RunIperf3Async());
     }
 
     public void KillSelectedProcess() => KillPid(_selected?.Pid ?? -1);

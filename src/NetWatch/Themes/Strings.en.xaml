@@ -394,4 +394,31 @@
     <sys:String x:Key="msg.alreadyRunning">NetWatch is already running (check the system tray).</sys:String>
     <sys:String x:Key="msg.cleanup">Cleanup</sys:String>
     <sys:String x:Key="msg.ok">OK</sys:String>
+    <sys:String x:Key="sp.title">Bandwidth Speed Test</sys:String>
+    <sys:String x:Key="sp.desc">Multi-source CDN sampling for download (best-of), upload via public echo endpoints (reference only). Tests run over a direct connection (system proxy bypassed) to reflect the physical link. For accurate up/down, configure an iperf3 server below (golden standard).</sys:String>
+    <sys:String x:Key="sp.run.down">Test download (multi-source)</sys:String>
+    <sys:String x:Key="sp.run.up">Test upload (reference)</sys:String>
+    <sys:String x:Key="sp.running">Preparing…</sys:String>
+    <sys:String x:Key="sp.testing">Streaming from {0}…</sys:String>
+    <sys:String x:Key="sp.done">Done</sys:String>
+    <sys:String x:Key="sp.best">Best download: {0} ({1} MB/s). Best-of across sources approximates real throughput to that source.</sys:String>
+    <sys:String x:Key="sp.all.failed">All speed test sources failed (check network or proxy)</sys:String>
+    <sys:String x:Key="sp.source.failed">failed</sys:String>
+    <sys:String x:Key="sp.upload.running">Testing upload…</sys:String>
+    <sys:String x:Key="sp.upload.result">Upload (reference): {0:F1} Mbps ({1:F1} MB/s) — limited by public echo endpoint</sys:String>
+    <sys:String x:Key="sp.upload.failed">Upload test failed</sys:String>
+    <sys:String x:Key="sp.iperf.title">iperf3 (golden standard)</sys:String>
+    <sys:String x:Key="sp.iperf.desc">Run "iperf3 -s" on the peer machine, then enter it here (e.g. 192.168.1.2 or 192.168.1.2:5201). Put iperf3.exe on the desktop for auto-detection.</sys:String>
+    <sys:String x:Key="sp.iperf.server">Server</sys:String>
+    <sys:String x:Key="sp.iperf.path">iperf3.exe path (empty = auto-find on desktop)</sys:String>
+    <sys:String x:Key="sp.iperf.run">Run</sys:String>
+    <sys:String x:Key="sp.iperf.no.server">Enter an iperf3 server address first</sys:String>
+    <sys:String x:Key="sp.iperf.no.exe">iperf3.exe not found; enter its full path above</sys:String>
+    <sys:String x:Key="sp.iperf.running">iperf3 running ({0}:{1})…</sys:String>
+    <sys:String x:Key="sp.iperf.ok">iperf3 done: up {0:F1} Mbps ({1:F1} MB/s) | down {2:F1} Mbps ({3:F1} MB/s)</sys:String>
+    <sys:String x:Key="sp.iperf.fail">iperf3 failed: {0}</sys:String>
+    <sys:String x:Key="sp.col.source">Source</sys:String>
+    <sys:String x:Key="sp.col.avg">Avg download</sys:String>
+    <sys:String x:Key="sp.col.peak">Peak</sys:String>
+    <sys:String x:Key="sp.col.volume">Volume/Duration</sys:String>
 </ResourceDictionary>

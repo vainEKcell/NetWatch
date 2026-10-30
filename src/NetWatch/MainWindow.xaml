@@ -530,6 +530,46 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- 带宽测速：多源 CDN 采样 + iperf3 黄金标准 -->
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource sp.title}" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{DynamicResource sp.desc}" Foreground="{DynamicResource DimBrush}"
+                                           TextWrapping="Wrap" Margin="0,2,0,8"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <Button Content="{DynamicResource sp.run.down}" Command="{Binding DownloadSpeedCommand}"
+                                            IsEnabled="{Binding SpeedRunning, Converter={StaticResource InvBool}}"/>
+                                    <Button Content="{DynamicResource sp.run.up}" Command="{Binding UploadSpeedCommand}" Margin="8,0,0,0"
+                                            IsEnabled="{Binding SpeedRunning, Converter={StaticResource InvBool}}"/>
+                                    <TextBlock Text="{Binding SpeedProgressText}" Foreground="{DynamicResource DimBrush}"
+                                               VerticalAlignment="Center" Margin="14,0,0,0"/>
+                                </StackPanel>
+                                <DataGrid ItemsSource="{Binding SpeedRows}" CanUserSortColumns="False" RowHeight="26" MaxHeight="170">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="{Binding [sp.col.source], Source={x:Static services:Loc.Instance}}" Binding="{Binding Source}" Width="1.2*"/>
+                                        <DataGridTextColumn Header="{Binding [sp.col.avg], Source={x:Static services:Loc.Instance}}" Binding="{Binding AvgText}" Width="1.4*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [sp.col.peak], Source={x:Static services:Loc.Instance}}" Binding="{Binding PeakText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                        <DataGridTextColumn Header="{Binding [sp.col.volume], Source={x:Static services:Loc.Instance}}" Binding="{Binding VolumeText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBlock Text="{Binding SpeedBestText}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                <TextBlock Text="{Binding UploadText}" Foreground="{DynamicResource DimBrush}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                <Separator Margin="0,10"/>
+                                <TextBlock Text="{DynamicResource sp.iperf.title}" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{DynamicResource sp.iperf.desc}" Foreground="{DynamicResource DimBrush}"
+                                           TextWrapping="Wrap" Margin="0,2,0,8"/>
+                                <WrapPanel>
+                                    <TextBlock Text="{DynamicResource sp.iperf.server}" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding Iperf3ServerText, UpdateSourceTrigger=PropertyChanged}" Width="190" Margin="6,0,0,0"/>
+                                    <TextBlock Text="{DynamicResource sp.iperf.path}" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                                    <TextBox Text="{Binding Iperf3PathText, UpdateSourceTrigger=PropertyChanged}" Width="210" Margin="6,0,0,0"/>
+                                    <Button Content="{DynamicResource sp.iperf.run}" Command="{Binding Iperf3RunCommand}" Margin="8,0,0,0"
+                                            IsEnabled="{Binding SpeedRunning, Converter={StaticResource InvBool}}"/>
+                                </WrapPanel>
+                                <TextBlock Text="{Binding Iperf3ResultText}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+
                         <Grid Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>

@@ -386,6 +386,14 @@ public sealed class ScenarioRowVM
     public SolidColorBrush Brush { get; init; } = UiBrushes.Fg;
 }
 
+public sealed class SpeedRowVM
+{
+    public string Source { get; init; } = "";
+    public string AvgText { get; init; } = "";
+    public string PeakText { get; init; } = "";
+    public string VolumeText { get; init; } = "";
+}
+
 public sealed class PingRowVM : VmBase
 {
     public string Target { get; private set; } = "";
