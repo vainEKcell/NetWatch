@@ -129,7 +129,9 @@ public sealed class MainViewModel : VmBase, IDisposable
         _rowsView.Filter = o => o is ProcessRowVM r && MatchSearch(r) && (!OnlyFlagged || r.RiskByte >= 2);
 
         _eventsView = (ListCollectionView)CollectionViewSource.GetDefaultView(Events);
-        _eventsView.Filter = o => o is EventRowVM ev && (EventsPidFilter == null || ev.Pid == EventsPidFilter.Value);
+        _eventsView.Filter = o => o is EventRowVM ev
+            && (EventsPidFilter == null || ev.Pid == EventsPidFilter.Value)
+            && (EventsKindFilter == null || ev.KindText == EventsKindFilter);
 
         _ = Task.Run(async () =>
         {
@@ -353,8 +355,31 @@ public sealed class MainViewModel : VmBase, IDisposable
             _eventsView?.Refresh();
         }
     }
-    public string EventsFilterText => EventsPidFilter == null ? "" : $"只看 PID {EventsPidFilter} 的相关事件";
-    public bool EventsFilterVisible => EventsPidFilter != null;
+
+    private string? _eventsKindFilter;
+    public string? EventsKindFilter
+    {
+        get => _eventsKindFilter;
+        set
+        {
+            _eventsKindFilter = value;
+            Raise(nameof(EventsFilterText));
+            Raise(nameof(EventsFilterVisible));
+            _eventsView?.Refresh();
+        }
+    }
+
+    public string EventsFilterText
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (EventsPidFilter != null) parts.Add($"只看 PID {EventsPidFilter} 的相关事件");
+            if (EventsKindFilter != null) parts.Add($"只看「{EventsKindFilter}」类型");
+            return string.Join("；", parts);
+        }
+    }
+    public bool EventsFilterVisible => EventsPidFilter != null || EventsKindFilter != null;
 
     public void ShowRelatedEventsForSelection()
     {
@@ -363,11 +388,22 @@ public sealed class MainViewModel : VmBase, IDisposable
         NavigateToEventsRequested?.Invoke();
     }
 
-    public void ClearEventsFilter() => EventsPidFilter = null;
+    public void ClearEventsFilter()
+    {
+        EventsPidFilter = null;
+        EventsKindFilter = null;
+    }
 
     public void FilterEventsByPid(int pid)
     {
         EventsPidFilter = pid;
+        NavigateToEventsRequested?.Invoke();
+    }
+
+    /// 事件流右键：只看该类型的事件
+    public void FilterEventsByKind(string kind)
+    {
+        EventsKindFilter = kind;
         NavigateToEventsRequested?.Invoke();
     }
 
@@ -738,17 +774,35 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     public string SpeedBestText { get; private set; } = "";
     public string SpeedNodeText { get; private set; } = "";
+    public string SpeedTierText { get; private set; } = "";
     public string UploadText { get; private set; } = "";
     public string SpeedProgressText { get; private set; } = "";
 
     private void RaiseSpeed() => RaiseAll(nameof(SpeedBestText), nameof(SpeedNodeText),
-        nameof(UploadText), nameof(SpeedProgressText));
+        nameof(SpeedTierText), nameof(UploadText), nameof(SpeedProgressText));
+
+    /// 由实测吞吐估算宽带档位：运营商通常提供 5%~35% 冗余，取实测值能落入的最小常见档位
+    private static string EstimateTier(double measuredMbps, out double headroomPct)
+    {
+        double[] tiers = { 50, 100, 200, 300, 500, 1000, 2000 };
+        double measured = Math.Max(measuredMbps, 1);
+        foreach (var t in tiers)
+        {
+            if (measured <= t * 1.35)
+            {
+                headroomPct = Math.Max(0, (measured / t - 1) * 100);
+                return $"{t:0} Mbps";
+            }
+        }
+        headroomPct = (measured / 2000 - 1) * 100;
+        return "≥2000 Mbps";
+    }
 
     /// 带宽测速核心：下行自动挑节点拉流 8 秒 + 上行公共端点参考值。
     /// 由体检流程调用；节点可用性随时段变化，上次测通的节点优先。
     private async Task<(double DownMbps, double UpMbps)?> RunSpeedTestCoreAsync()
     {
-        SpeedBestText = ""; SpeedNodeText = ""; UploadText = "";
+        SpeedBestText = ""; SpeedNodeText = ""; SpeedTierText = ""; UploadText = "";
         SpeedProgressText = L10n.T("sp.picking");
         RaiseSpeed();
 
@@ -771,11 +825,14 @@ public sealed class MainViewModel : VmBase, IDisposable
         {
             SpeedBestText = L10n.T("sp.best", $"{down.MbpsAvg:F1} Mbps", $"{down.MBPerSec:F1}");
             SpeedNodeText = L10n.T("sp.node", down.Source, $"{down.MbpsPeak:F1}");
+            var measured = Math.Max(down.MbpsAvg, down.MbpsPeak * 0.9);
+            SpeedTierText = L10n.T("sp.tier", EstimateTier(measured, out var headroom), headroom);
         }
         else
         {
             SpeedBestText = L10n.T("sp.all.failed");
             SpeedNodeText = "";
+            SpeedTierText = "";
         }
 
         // 上行：公共端点参考值
@@ -826,7 +883,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         CheckRunning = true;
         NatText = "…"; NatExternal = ""; NatDetailText = ""; LinkTypeText = "";
         WifiSignalText = ""; WifiSsidText = "";
-        SpeedBestText = ""; SpeedNodeText = ""; UploadText = ""; SpeedProgressText = "";
+        SpeedBestText = ""; SpeedNodeText = ""; SpeedTierText = ""; UploadText = ""; SpeedProgressText = "";
         CheckVerdictText = L10n.T("ncv.running"); CheckVerdictBrush = UiBrushes.Dim;
         CheckAdvices.Clear(); PingRows.Clear(); ScenarioRows.Clear();
         RaiseAll(nameof(CheckRunning), nameof(CheckProgressText), nameof(NatText), nameof(NatExternal),
@@ -902,19 +959,8 @@ public sealed class MainViewModel : VmBase, IDisposable
             if (worstJitter >= 15) advices.Add(L10n.T("ncv.advise.jitter"));
             if (worstLoss >= 2) advices.Add(L10n.T("ncv.advise.loss"));
 
-            // 分场景评价：不同场景对指标的敏感度不同
+            // 分场景评价：不同场景对指标的敏感度不同；带宽结果在测速完成后参与评分
             bool natUnknown = nat.Kind is "fail" or "insufficient";
-            int gaming = natUnknown ? -1 : Math.Max(natScore, Math.Max(jitterScore, Math.Max(lossScore, latencyScore)));
-            int meeting = Math.Max(jitterScore, Math.Max(lossScore, latencyScore));
-            int streaming = Math.Max(lossScore, latencyScore);
-            int browsing = worstLoss >= 5 || worstAvg >= 150 ? 2 : worstLoss >= 2 || worstAvg >= 80 ? 1 : 0;
-
-            ScenarioRows.Clear();
-            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.gaming"), gaming, natUnknown));
-            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.meeting"), meeting, false));
-            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.streaming"), streaming, false));
-            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.browsing"), browsing, false));
-            Raise(nameof(ScenarioRows));
 
             // 路径 MTU（PPPoE/VPN 环境会明显低于 1500）
             CheckProgressText = L10n.T("ncv.checking.mtu");
@@ -924,6 +970,39 @@ public sealed class MainViewModel : VmBase, IDisposable
                 : mtu >= 1472 ? L10n.T("ncv.mtu.normal", mtu)
                 : L10n.T("ncv.mtu.low", mtu);
             Raise(nameof(MtuText));
+
+            // 带宽测速：并入体检一键流程（下行自动挑节点 + 上行参考值）
+            CheckProgressText = L10n.T("ncv.checking.speed");
+            Raise(nameof(CheckProgressText));
+            var speed = await RunSpeedTestCoreAsync();
+            double? downMbps = speed?.Item1;
+            double? upMbps = speed?.Item2;
+
+            int gaming = natUnknown ? -1 : Math.Max(natScore, Math.Max(jitterScore, Math.Max(lossScore, latencyScore)));
+            // 实时语音：对抖动/丢包敏感，对带宽不敏感
+            int voice = Math.Max(jitterScore, lossScore);
+            // 视频会议：抖动/丢包/延迟 + 基本下行带宽
+            int meeting = Math.Max(Math.Max(jitterScore, lossScore), latencyScore);
+            if (downMbps is < 5) meeting = 2;
+            else if (downMbps is < 10) meeting = Math.Max(meeting, 1);
+            // 高清流媒体：主要看下行带宽，轻延迟
+            int streaming = Math.Max(lossScore, latencyScore > 2 ? 2 : 0);
+            if (downMbps is < 25) streaming = 2;
+            else if (downMbps is < 50) streaming = Math.Max(streaming, 1);
+            // 大文件传输：吞吐型，丢包/延迟影响重传效率；持续带宽不足则慢
+            int transfer = Math.Max(lossScore, latencyScore);
+            if (downMbps is < 10) transfer = 2;
+            else if (downMbps is < 30) transfer = Math.Max(transfer, 1);
+            int browsing = worstLoss >= 5 || worstAvg >= 150 ? 2 : worstLoss >= 2 || worstAvg >= 80 ? 1 : 0;
+
+            ScenarioRows.Clear();
+            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.gaming"), gaming, natUnknown));
+            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.voice"), voice, false));
+            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.meeting"), meeting, false));
+            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.streaming"), streaming, false));
+            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.transfer"), transfer, false));
+            ScenarioRows.Add(ScenarioRow(L10n.T("ncv.sc.browsing"), browsing, false));
+            Raise(nameof(ScenarioRows));
 
             int total = natScore + latencyScore + jitterScore + lossScore;
             (CheckVerdictText, CheckVerdictBrush) = total switch
@@ -937,12 +1016,7 @@ public sealed class MainViewModel : VmBase, IDisposable
             CheckAdvices.Clear();
             foreach (var a in advices.Distinct()) CheckAdvices.Add("• " + a);
 
-            // 带宽测速：并入体检一键流程（下行自动挑节点 + 上行参考值）
-            CheckProgressText = L10n.T("ncv.checking.speed");
-            Raise(nameof(CheckProgressText));
-            var speed = await RunSpeedTestCoreAsync();
-
-            // 实时占用相对链路容量的比例，写进体检结论（占用卡已并入这里）
+            // 实时占用相对链路容量的比例，写进体检结果（占用卡已并入这里）
             if (_linkBps > 0)
             {
                 double upNow = 0, downNow = 0;

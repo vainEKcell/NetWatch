@@ -184,11 +184,12 @@
                         <ColumnDefinition Width="410"/>
                     </Grid.ColumnDefinitions>
 
-                    <DataGrid x:Name="ProcessGrid" Grid.Column="0" ItemsSource="{Binding Rows}"
-                              RowStyle="{StaticResource ProcRow}" Sorting="OnProcessSort"
-                              SelectedItem="{Binding Selected}" SelectionMode="Single"
-                              ContextMenuOpening="GridContextMenuOpening"
-                              EnableRowVirtualization="True">
+                    <Border Grid.Column="0" Style="{StaticResource CardTight}">
+                        <DataGrid x:Name="ProcessGrid" ItemsSource="{Binding Rows}"
+                                  RowStyle="{StaticResource ProcRow}" Sorting="OnProcessSort"
+                                  SelectedItem="{Binding Selected}" SelectionMode="Single"
+                                  ContextMenuOpening="GridContextMenuOpening"
+                                  EnableRowVirtualization="True">
                         <DataGrid.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="{DynamicResource cm.related}" Command="{Binding ShowRelatedEventsCommand}"/>
@@ -262,6 +263,7 @@
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
+                    </Border>
 
                     <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Stretch" Background="Transparent"/>
 
@@ -376,6 +378,7 @@
 
             <!-- ========== 2. 目的地排行 ========== -->
             <Grid x:Name="PageDestinations" Visibility="Collapsed">
+                <Border Style="{StaticResource CardTight}">
                 <DataGrid ItemsSource="{Binding Destinations}" CanUserSortColumns="False">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="{Binding [col.dest], Source={x:Static services:Loc.Instance}}" Binding="{Binding Display}" Width="2*"/>
@@ -389,10 +392,12 @@
                         <DataGridTextColumn Header="{Binding [col.involved], Source={x:Static services:Loc.Instance}}" Binding="{Binding ProcessesText}" Width="*"/>
                     </DataGrid.Columns>
                 </DataGrid>
+                </Border>
             </Grid>
 
             <!-- ========== 3. DNS 安全 ========== -->
             <Grid x:Name="PageDns" Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -440,7 +445,9 @@
                             <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}"
                                        Text="{DynamicResource dns.streamTitle}"/>
                             <DataGrid ItemsSource="{Binding DnsStream}" RowStyle="{StaticResource AlertRow}"
-                                      CanUserSortColumns="False" RowHeight="26" ContextMenuOpening="GridContextMenuOpening">
+                                      CanUserSortColumns="False" RowHeight="26" ContextMenuOpening="GridContextMenuOpening"
+                                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                 <DataGrid.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="{DynamicResource cm.detail}" Click="OnCmProcDetailOpen"/>
@@ -483,8 +490,9 @@
                             </StackPanel>
                             <TextBlock Text="{Binding DohStatusText}" Foreground="{DynamicResource DimBrush}"
                                        TextWrapping="Wrap" Margin="0,6,0,0"/>
-                            <DataGrid ItemsSource="{Binding DohResults}" MaxHeight="170" CanUserSortColumns="False"
-                                      RowHeight="28" Margin="0,8,0,0">
+                            <DataGrid ItemsSource="{Binding DohResults}" CanUserSortColumns="False"
+                                      Margin="0,8,0,0" MinRowHeight="30"
+                                      ScrollViewer.VerticalScrollBarVisibility="Disabled">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="{Binding [col.domain], Source={x:Static services:Loc.Instance}}" Binding="{Binding Domain}" Width="160"/>
                                     <DataGridTextColumn Header="{Binding [col.localResult], Source={x:Static services:Loc.Instance}}" Binding="{Binding LocalIps}" Width="1.1*"/>
@@ -502,6 +510,7 @@
                         </StackPanel>
                     </Border>
                 </Grid>
+                </ScrollViewer>
             </Grid>
 
             <!-- ========== 4. 网络体检 ========== -->
@@ -554,12 +563,13 @@
                                 <TextBlock Text="{DynamicResource sp.title}" Style="{StaticResource SectionHeader}"/>
                                 <TextBlock Text="{Binding SpeedProgressText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,2,0,0"/>
                                 <TextBlock Text="{Binding SpeedBestText}" FontSize="15" FontWeight="Bold" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding SpeedTierText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,3,0,0"/>
                                 <TextBlock Text="{Binding SpeedNodeText}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                           TextWrapping="Wrap" Margin="0,3,0,0"/>
                                 <TextBlock Text="{Binding UploadText}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                           TextWrapping="Wrap" Margin="0,3,0,0"/>
                                 <TextBlock Text="{DynamicResource sp.desc}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                           TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                           TextWrapping="Wrap" Margin="0,6,0,0"/>
                             </StackPanel>
                         </Border>
 
@@ -620,7 +630,7 @@
                                 <ItemsControl ItemsSource="{Binding ScenarioRows}" Margin="0,4,0,0">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid Margin="0,3">
+                                            <Grid Margin="0,4">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="150"/>
                                                     <ColumnDefinition Width="*"/>
@@ -633,8 +643,8 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                                <TextBlock Text="{Binding PeakText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,4,0,0"/>
-                                <Separator Margin="0,8"/>
+                                <TextBlock Text="{Binding PeakText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,6,0,0"/>
+                                <Separator Margin="0,7,0,5"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
@@ -645,18 +655,18 @@
                                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="{DynamicResource ncv.link}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding LinkTypeText}" FontSize="11" Margin="10,1,0,1"/>
-                                    <TextBlock Grid.Row="1" Text="{DynamicResource ncv.linkspeed}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LinkSpeedText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="10,1,0,1"/>
-                                    <TextBlock Grid.Row="2" Text="{DynamicResource ncv.wifi.signal}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding WifiSignalText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="10,1,0,1"/>
-                                    <TextBlock Grid.Row="3" Text="{DynamicResource ncv.wifi.ssid}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                    <TextBlock Text="{DynamicResource ncv.link}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,3"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding LinkTypeText}" FontSize="11" Margin="10,3,0,3"/>
+                                    <TextBlock Grid.Row="1" Text="{DynamicResource ncv.linkspeed}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,3"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LinkSpeedText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="10,3,0,3"/>
+                                    <TextBlock Grid.Row="2" Text="{DynamicResource ncv.wifi.signal}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,3"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding WifiSignalText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="10,3,0,3"/>
+                                    <TextBlock Grid.Row="3" Text="{DynamicResource ncv.wifi.ssid}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,3"/>
                                     <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding WifiSsidText}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                               Margin="10,1,0,1" TextTrimming="CharacterEllipsis" ToolTip="{Binding WifiSsidText}"/>
-                                    <TextBlock Grid.Row="4" Text="{DynamicResource ncv.mtu}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                               Margin="10,3,0,3" TextTrimming="CharacterEllipsis" ToolTip="{Binding WifiSsidText}"/>
+                                    <TextBlock Grid.Row="4" Text="{DynamicResource ncv.mtu}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,3"/>
                                     <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding MtuText}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                               Margin="10,1,0,1" TextTrimming="CharacterEllipsis" ToolTip="{Binding MtuText}"/>
+                                               Margin="10,3,0,3" TextTrimming="CharacterEllipsis" ToolTip="{Binding MtuText}"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -682,6 +692,7 @@
 
             <!-- ========== 5. 监听端口 ========== -->
             <Grid x:Name="PagePorts" Visibility="Collapsed">
+                <Border Style="{StaticResource CardTight}">
                 <DataGrid ItemsSource="{Binding Ports}" CanUserSortColumns="False">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="{Binding [col.proto], Source={x:Static services:Loc.Instance}}" Binding="{Binding ProtoText}" Width="55"/>
@@ -694,6 +705,7 @@
                         <DataGridTextColumn Header="{Binding [col.process], Source={x:Static services:Loc.Instance}}" Binding="{Binding Process}" Width="*"/>
                     </DataGrid.Columns>
                 </DataGrid>
+                </Border>
             </Grid>
 
             <!-- ========== 5. 事件流 ========== -->
@@ -714,10 +726,12 @@
                                    Foreground="{DynamicResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"
                                    ToolTip="{DynamicResource ev.hint}"/>
                     </StackPanel>
+                    <Border Style="{StaticResource CardTight}">
                     <DataGrid ItemsSource="{Binding Events}" CanUserSortColumns="False" ContextMenuOpening="GridContextMenuOpening">
                         <DataGrid.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="{DynamicResource cm.filterPid}" Click="OnCmFilterEventPid"/>
+                                <MenuItem Header="{DynamicResource cm.filterKind}" Click="OnCmFilterEventKind"/>
                                 <MenuItem Header="{DynamicResource cm.resetFilter}" Click="OnCmResetFilter"/>
                                 <Separator/>
                                 <MenuItem Header="{DynamicResource cm.copyTarget}" Click="OnCmEventCopyTarget"/>
@@ -739,6 +753,7 @@
                                                 ElementStyle="{StaticResource CellRight}"/>
                         </DataGrid.Columns>
                     </DataGrid>
+                    </Border>
                 </DockPanel>
             </Grid>
 
@@ -756,14 +771,16 @@
                         <TextBlock Text="{DynamicResource bl.note}"
                                    Foreground="{DynamicResource DimBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
                     </StackPanel>
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding BlockedApps}" CanUserSortColumns="False"
-                              SelectedItem="{Binding SelectedBlocked}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="{Binding [col.app], Source={x:Static services:Loc.Instance}}" Binding="{Binding DisplayName}" Width="240"/>
-                            <DataGridTextColumn Header="{Binding [col.path], Source={x:Static services:Loc.Instance}}" Binding="{Binding Path}" Width="*"/>
-                            <DataGridTextColumn Header="{Binding [col.rules], Source={x:Static services:Loc.Instance}}" Binding="{Binding RulesText}" Width="90"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <Border Grid.Row="1" Style="{StaticResource CardTight}">
+                        <DataGrid ItemsSource="{Binding BlockedApps}" CanUserSortColumns="False"
+                                  SelectedItem="{Binding SelectedBlocked}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{Binding [col.app], Source={x:Static services:Loc.Instance}}" Binding="{Binding DisplayName}" Width="240"/>
+                                <DataGridTextColumn Header="{Binding [col.path], Source={x:Static services:Loc.Instance}}" Binding="{Binding Path}" Width="*"/>
+                                <DataGridTextColumn Header="{Binding [col.rules], Source={x:Static services:Loc.Instance}}" Binding="{Binding RulesText}" Width="90"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
                     <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,8,0,0">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
@@ -787,15 +804,17 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <DataGrid Grid.Row="0" ItemsSource="{Binding Adapters}" CanUserSortColumns="False" MaxHeight="190">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="{Binding [col.adapter], Source={x:Static services:Loc.Instance}}" Binding="{Binding Name}" Width="170"/>
-                            <DataGridTextColumn Header="{Binding [col.status], Source={x:Static services:Loc.Instance}}" Binding="{Binding Status}" Width="70"/>
-                            <DataGridTextColumn Header="{Binding [col.ips], Source={x:Static services:Loc.Instance}}" Binding="{Binding IpsText}" Width="1.2*"/>
-                            <DataGridTextColumn Header="{Binding [col.gateway], Source={x:Static services:Loc.Instance}}" Binding="{Binding GwText}" Width="*"/>
-                            <DataGridTextColumn Header="{Binding [col.dns], Source={x:Static services:Loc.Instance}}" Binding="{Binding DnsText}" Width="1.2*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <Border Grid.Row="0" Style="{StaticResource CardTight}" Margin="0,0,0,8">
+                        <DataGrid ItemsSource="{Binding Adapters}" CanUserSortColumns="False" MaxHeight="190">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{Binding [col.adapter], Source={x:Static services:Loc.Instance}}" Binding="{Binding Name}" Width="170"/>
+                                <DataGridTextColumn Header="{Binding [col.status], Source={x:Static services:Loc.Instance}}" Binding="{Binding Status}" Width="70"/>
+                                <DataGridTextColumn Header="{Binding [col.ips], Source={x:Static services:Loc.Instance}}" Binding="{Binding IpsText}" Width="1.2*"/>
+                                <DataGridTextColumn Header="{Binding [col.gateway], Source={x:Static services:Loc.Instance}}" Binding="{Binding GwText}" Width="*"/>
+                                <DataGridTextColumn Header="{Binding [col.dns], Source={x:Static services:Loc.Instance}}" Binding="{Binding DnsText}" Width="1.2*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
 
                     <Grid Grid.Row="1" Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>

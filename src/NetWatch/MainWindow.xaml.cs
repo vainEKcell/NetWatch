@@ -132,6 +132,12 @@ public partial class MainWindow : Window
             _vm.FilterEventsByPid(ev.Pid);
     }
 
+    private void OnCmFilterEventKind(object sender, RoutedEventArgs e)
+    {
+        if ((sender as System.Windows.Controls.ContextMenu)?.PlacementTarget is DataGrid { SelectedItem: EventRowVM ev })
+            _vm.FilterEventsByKind(ev.KindText);
+    }
+
     // ---------- 事件流 / DNS 流右键动作 ----------
 
     // ---------- 右键菜单：让动作作用于"右键的那一行"而不是"上次选中的行" ----------

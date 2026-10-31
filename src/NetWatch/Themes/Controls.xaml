@@ -19,6 +19,12 @@
         <Setter Property="Padding" Value="12"/>
     </Style>
 
+    <!-- 圆角容器（无内边距）：用于包裹数据表格，为表格提供圆角外观 -->
+    <Style x:Key="CardTight" TargetType="Border" BasedOn="{StaticResource Card}">
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+
     <Style TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource FgBrush}"/>
     </Style>
@@ -130,7 +136,7 @@
     <!-- ===== 滚动条 ===== -->
     <Style TargetType="ScrollBar">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Width" Value="8"/>
+        <Setter Property="Width" Value="7"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
@@ -146,7 +152,12 @@
                                 <Thumb>
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Border Background="{DynamicResource ThumbBrush}" CornerRadius="4" Margin="1"/>
+                                            <Border x:Name="ThumbBorder" Background="{DynamicResource ThumbBrush}" CornerRadius="3.5" Margin="1"/>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>
@@ -156,7 +167,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="Orientation" Value="Horizontal">
                             <Setter Property="Width" Value="Auto"/>
-                            <Setter Property="Height" Value="8"/>
+                            <Setter Property="Height" Value="7"/>
                             <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -166,10 +177,10 @@
     </Style>
 
     <!-- ===== 数据表格 ===== -->
+    <!-- 无硬边框：表格统一放在圆角 Card 容器内，由容器提供圆角 -->
     <Style TargetType="DataGrid">
-        <Setter Property="Background" Value="{DynamicResource PanelBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Foreground" Value="{DynamicResource FgBrush}"/>
         <Setter Property="RowBackground" Value="Transparent"/>
         <Setter Property="AlternatingRowBackground" Value="{DynamicResource RowAltBrush}"/>
@@ -197,12 +208,13 @@
     </Style>
 
     <Style TargetType="DataGridColumnHeader">
-        <Setter Property="Background" Value="{DynamicResource Panel2Brush}"/>
+        <Setter Property="Background" Value="{DynamicResource RowAltBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource DimBrush}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Padding" Value="8,0"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Padding" Value="10,0"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
         <Setter Property="Template">
             <Setter.Value>

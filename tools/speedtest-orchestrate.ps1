@@ -53,7 +53,7 @@ while ((Get-Date) -lt $deadline) {
     $els = $win.FindAll([System.Windows.Automation.TreeScope]::Descendants, $tc)
     foreach ($el in $els) {
         $n = $el.Current.Name
-        if ($n -match '下行|节点：|上行 |Mapping|Filtering|全锥|锥形|对称|网关|DNS|体检结论|链路容量|优秀|良好|一般|较差|不足|无法检测') { $out += $n }
+        if ($n -match '下行|节点：|上行 |档位|Mapping|Filtering|全锥|锥形|对称|网关|DNS|体检结果|链路容量|游戏|语音|会议|流媒体|文件|浏览|优秀|良好|一般|较差|不足|无法检测') { $out += $n }
     }
     $joined = $out -join [char]10
     if ($joined -match '测速完成|均不可用') { break }
