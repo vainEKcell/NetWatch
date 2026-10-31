@@ -14,10 +14,8 @@ public sealed record SpeedTestResult(string Source, double MbpsAvg, double MbpsP
 
 public sealed record IperfResult(bool Ok, double DownMbps, double UpMbps, string Error);
 
-/// 带宽吞吐测速（HTTP 大流量采样）+ iperf3 黄金标准模式。
-/// - 下载：从国内公共镜像/CDN 以 HTTP 拉取真实数据 8 秒，剔除前 1 秒 TCP 爬坡期后计算吞吐，多源取最优
-/// - 上行：向公共回显端点 POST 随机数据（受接收端限制，标注为参考值）
-/// - iperf3：用户自备对端（iperf3 -s），本机作为客户端跑 TCP 上/下行（黄金标准）
+/// 带宽吞吐测速：从国内公共镜像/CDN 以 HTTP 拉取真实数据采样，
+/// 剔除前 1 秒 TCP 慢启动阶段后计算吞吐；节点可用性随时段变化，由调用方按备选顺序挑选。
 public static class SpeedTestService
 {
     internal static readonly (string Name, string Url)[] DownloadSources =
@@ -175,78 +173,5 @@ public static class SpeedTestService
             peak = Math.Max(peak, (lastM.Bytes - bBytes) * 8.0 / (lastM.Sec - bStart) / 1_000_000);
 
         return new SpeedTestResult(name, avgMbps, peak, marks[^1].Bytes / 1048576.0, (int)Math.Round(duration));
-    }
-}
-
-/// iperf3 黄金标准模式：调用用户自备的 iperf3.exe 对指定服务器跑 TCP 上/下行
-public static class Iperf3Runner
-{
-    /// 在桌面及常见位置自动寻找 iperf3.exe
-    public static string? AutoLocate()
-    {
-        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-        var candidates = new[]
-        {
-            Path.Combine(desktop, "iperf3.exe"),
-            Path.Combine(desktop, "iperf3", "iperf3.exe"),
-        };
-        foreach (var c in candidates)
-            if (File.Exists(c)) return c;
-
-        // 桌面子目录往下搜一层
-        try
-        {
-            foreach (var dir in Directory.GetDirectories(desktop))
-            {
-                var hit = Path.Combine(dir, "iperf3.exe");
-                if (File.Exists(hit)) return hit;
-            }
-        }
-        catch { }
-        return null;
-    }
-
-    public static async Task<IperfResult> RunAsync(string exePath, string host, int port, int seconds, CancellationToken ct)
-    {
-        // 先上行（客户端发送），再下行（-R 服务端发送）
-        var up = await RunOne(exePath, host, port, seconds, reverse: false, ct);
-        var down = await RunOne(exePath, host, port, seconds, reverse: true, ct);
-        if (up == null && down == null)
-            return new IperfResult(false, 0, 0, "iperf3 未返回有效结果（检查服务器与网络）");
-        return new IperfResult(true, down ?? 0, up ?? 0, "");
-    }
-
-    private static async Task<double?> RunOne(string exePath, string host, int port, int seconds, bool reverse, CancellationToken ct)
-    {
-        var psi = new ProcessStartInfo(exePath)
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-        psi.ArgumentList.Add("-c"); psi.ArgumentList.Add(host);
-        psi.ArgumentList.Add("-p"); psi.ArgumentList.Add(port.ToString());
-        psi.ArgumentList.Add("-t"); psi.ArgumentList.Add(seconds.ToString());
-        if (reverse) psi.ArgumentList.Add("-R");
-        psi.ArgumentList.Add("-J");
-
-        using var p = Process.Start(psi)!;
-        var stdout = await p.StandardOutput.ReadToEndAsync(ct);
-        await p.WaitForExitAsync(ct);
-        if (p.ExitCode != 0) return null;
-
-        try
-        {
-            using var doc = System.Text.Json.JsonDocument.Parse(stdout);
-            var root = doc.RootElement;
-            double bps;
-            if (reverse)
-                bps = root.GetProperty("end").GetProperty("sum_received").GetProperty("bits_per_second").GetDouble();
-            else
-                bps = root.GetProperty("end").GetProperty("sum_sent").GetProperty("bits_per_second").GetDouble();
-            return bps / 1_000_000.0;
-        }
-        catch { return null; }
     }
 }

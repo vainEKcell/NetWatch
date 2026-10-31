@@ -530,12 +530,12 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- 左列：NAT / 场景分析 / 建议 -->
+                    <!-- 左列：NAT / 场景分析 / 连接信息 -->
                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
                         <Border Style="{StaticResource Card}" Margin="0,0,0,8">
                             <StackPanel>
                                 <TextBlock Text="{DynamicResource ncv.nat}" Style="{StaticResource SectionHeader}"/>
-                                <TextBlock Text="{Binding NatText}" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding NatText}" FontSize="15" FontWeight="Bold" TextWrapping="Wrap"/>
                                 <Grid Margin="0,4,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
@@ -569,44 +569,6 @@
                         </Border>
 
                         <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource ncv.advise}" Style="{StaticResource SectionHeader}"/>
-                                <ItemsControl ItemsSource="{Binding CheckAdvices}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2" FontSize="11"
-                                                       Foreground="{DynamicResource DimBrush}"/>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-
-                    <!-- 右列：带宽测速 / 连接信息 / 延迟 -->
-                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,8">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource sp.title}" Style="{StaticResource SectionHeader}"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,2,0,4">
-                                    <Button Content="{DynamicResource sp.run.down}" Command="{Binding DownloadSpeedCommand}"
-                                            IsEnabled="{Binding SpeedRunning, Converter={StaticResource InvBool}}"/>
-                                    <Button Content="{DynamicResource sp.run.up}" Command="{Binding UploadSpeedCommand}" Margin="8,0,0,0"
-                                            IsEnabled="{Binding SpeedRunning, Converter={StaticResource InvBool}}"/>
-                                    <TextBlock Text="{Binding SpeedProgressText}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                               VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                </StackPanel>
-                                <TextBlock Text="{Binding SpeedBestText}" FontSize="15" FontWeight="Bold" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding SpeedNodeText}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
-                                <TextBlock Text="{Binding UploadText}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
-                                <TextBlock Text="{DynamicResource sp.desc}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                           TextWrapping="Wrap" Margin="0,4,0,0"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,8">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -631,8 +593,25 @@
                                            Margin="10,1,0,1" TextTrimming="CharacterEllipsis" ToolTip="{Binding MtuText}"/>
                             </Grid>
                         </Border>
+                    </StackPanel>
 
-                        <Border Style="{StaticResource Card}">
+                    <!-- 右列：带宽测速 / 延迟 / 建议 -->
+                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource sp.title}" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{Binding SpeedProgressText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,2,0,0"/>
+                                <TextBlock Text="{Binding SpeedBestText}" FontSize="15" FontWeight="Bold" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding SpeedNodeText}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                <TextBlock Text="{Binding UploadText}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                <TextBlock Text="{DynamicResource sp.desc}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                           TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,8">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}"
                                            Text="{DynamicResource ncv.ping}"/>
@@ -655,6 +634,20 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </DockPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource ncv.advise}" Style="{StaticResource SectionHeader}"/>
+                                <ItemsControl ItemsSource="{Binding CheckAdvices}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2" FontSize="11"
+                                                       Foreground="{DynamicResource DimBrush}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
                         </Border>
                     </StackPanel>
                 </Grid>

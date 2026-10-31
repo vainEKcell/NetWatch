@@ -734,89 +734,68 @@ public sealed class MainViewModel : VmBase, IDisposable
     private double _peakUp, _peakDown;
     private long _linkBps;
 
-    // ================= 带宽测速（自动挑节点拉流） =================
+    // ================= 带宽测速（并入体检一键流程） =================
 
     public string SpeedBestText { get; private set; } = "";
     public string SpeedNodeText { get; private set; } = "";
     public string UploadText { get; private set; } = "";
-    public bool SpeedRunning { get; private set; }
     public string SpeedProgressText { get; private set; } = "";
-    public RelayCommand DownloadSpeedCommand { get; private set; } = null!;
-    public RelayCommand UploadSpeedCommand { get; private set; } = null!;
 
-    private void RaiseSpeed() => RaiseAll(nameof(SpeedRunning), nameof(SpeedProgressText),
-        nameof(SpeedBestText), nameof(SpeedNodeText), nameof(UploadText));
+    private void RaiseSpeed() => RaiseAll(nameof(SpeedBestText), nameof(SpeedNodeText),
+        nameof(UploadText), nameof(SpeedProgressText));
 
-    public async Task RunDownloadSpeedAsync()
+    /// 带宽测速核心：下行自动挑节点拉流 8 秒 + 上行公共端点参考值。
+    /// 由体检流程调用；节点可用性随时段变化，上次测通的节点优先。
+    private async Task<(double DownMbps, double UpMbps)?> RunSpeedTestCoreAsync()
     {
-        if (SpeedRunning) return;
-        SpeedRunning = true;
         SpeedBestText = ""; SpeedNodeText = ""; UploadText = "";
         SpeedProgressText = L10n.T("sp.picking");
         RaiseSpeed();
 
-        try
+        // 下行：按备选顺序挑节点，第一个测通的即采用
+        SpeedTestResult? down = null;
+        foreach (var i in SpeedTestService.SourceOrder())
         {
-            SpeedTestResult? best = null;
-            foreach (var i in SpeedTestService.SourceOrder())
+            var (name, url) = SpeedTestService.DownloadSources[i];
+            SpeedProgressText = L10n.T("sp.testing", name);
+            Raise(nameof(SpeedProgressText));
+            try
             {
-                var (name, url) = SpeedTestService.DownloadSources[i];
-                SpeedProgressText = L10n.T("sp.testing", name);
-                Raise(nameof(SpeedProgressText));
-                try
-                {
-                    var r = await SpeedTestService.RunDownloadAsync(name, url, seconds: 8, CancellationToken.None);
-                    if (r.MbpsAvg > 0) { best = r; SpeedTestService.LastGoodSource = i; break; }
-                }
-                catch (Exception ex) { Log.Error($"测速节点 {name} 这次没通", ex); }
+                var r = await SpeedTestService.RunDownloadAsync(name, url, seconds: 8, CancellationToken.None);
+                if (r.MbpsAvg > 0) { down = r; SpeedTestService.LastGoodSource = i; break; }
             }
-
-            if (best != null)
-            {
-                SpeedBestText = L10n.T("sp.best", $"{best.MbpsAvg:F1} Mbps", $"{best.MBPerSec:F1}");
-                SpeedNodeText = L10n.T("sp.node", best.Source, $"{best.MbpsPeak:F1}");
-            }
-            else
-            {
-                SpeedBestText = L10n.T("sp.all.failed");
-                SpeedNodeText = "";
-            }
-            SpeedProgressText = L10n.T("sp.done");
+            catch (Exception ex) { Log.Error($"测速节点 {name} 本次不可用", ex); }
         }
-        finally
+
+        if (down != null)
         {
-            SpeedRunning = false;
-            RaiseSpeed();
+            SpeedBestText = L10n.T("sp.best", $"{down.MbpsAvg:F1} Mbps", $"{down.MBPerSec:F1}");
+            SpeedNodeText = L10n.T("sp.node", down.Source, $"{down.MbpsPeak:F1}");
         }
-    }
+        else
+        {
+            SpeedBestText = L10n.T("sp.all.failed");
+            SpeedNodeText = "";
+        }
 
-    public async Task RunUploadSpeedAsync()
-    {
-        if (SpeedRunning) return;
-        SpeedRunning = true;
+        // 上行：公共端点参考值
         SpeedProgressText = L10n.T("sp.upload.running");
-        UploadText = "";
-        RaiseSpeed();
-        try
+        Raise(nameof(SpeedProgressText));
+        double up = 0;
+        foreach (var (name, url) in SpeedTestService.UploadEndpoints)
         {
-            double best = 0;
-            foreach (var (name, url) in SpeedTestService.UploadEndpoints)
+            try
             {
-                try
-                {
-                    var r = await SpeedTestService.RunUploadAsync(name, url, megabytes: 2, CancellationToken.None);
-                    if (r.MbpsAvg > best) best = r.MbpsAvg;
-                }
-                catch (Exception ex) { Log.Error($"上行测速 {name} 没成功", ex); }
+                var r = await SpeedTestService.RunUploadAsync(name, url, megabytes: 2, CancellationToken.None);
+                if (r.MbpsAvg > up) up = r.MbpsAvg;
             }
-            UploadText = best > 0 ? L10n.T("sp.upload.result", best, best / 8.0) : L10n.T("sp.upload.failed");
+            catch (Exception ex) { Log.Error($"上行测速 {name} 未完成", ex); }
         }
-        finally
-        {
-            SpeedRunning = false;
-            SpeedProgressText = L10n.T("sp.done");
-            RaiseSpeed();
-        }
+        UploadText = up > 0 ? L10n.T("sp.upload.result", up, up / 8.0) : L10n.T("sp.upload.failed");
+
+        SpeedProgressText = L10n.T("sp.done");
+        RaiseSpeed();
+        return down != null ? (down.MbpsAvg, up) : null;
     }
 
     public Verdict? GetVerdictFor(int pid) =>
@@ -847,11 +826,13 @@ public sealed class MainViewModel : VmBase, IDisposable
         CheckRunning = true;
         NatText = "…"; NatExternal = ""; NatDetailText = ""; LinkTypeText = "";
         WifiSignalText = ""; WifiSsidText = "";
+        SpeedBestText = ""; SpeedNodeText = ""; UploadText = ""; SpeedProgressText = "";
         CheckVerdictText = L10n.T("ncv.running"); CheckVerdictBrush = UiBrushes.Dim;
         CheckAdvices.Clear(); PingRows.Clear(); ScenarioRows.Clear();
         RaiseAll(nameof(CheckRunning), nameof(CheckProgressText), nameof(NatText), nameof(NatExternal),
             nameof(NatDetailText), nameof(LinkTypeText), nameof(CheckVerdictText), nameof(CheckVerdictBrush),
             nameof(WifiSignalText), nameof(WifiSsidText));
+        RaiseSpeed();
 
         try
         {
@@ -961,6 +942,12 @@ public sealed class MainViewModel : VmBase, IDisposable
 
             CheckAdvices.Clear();
             foreach (var a in advices.Distinct()) CheckAdvices.Add("• " + a);
+
+            // 带宽测速：并入体检一键流程（下行自动挑节点 + 上行参考值）
+            CheckProgressText = L10n.T("ncv.checking.speed");
+            Raise(nameof(CheckProgressText));
+            var speed = await RunSpeedTestCoreAsync();
+
             // 实时占用相对链路容量的比例，写进体检结论（占用卡已并入这里）
             if (_linkBps > 0)
             {
@@ -989,8 +976,6 @@ public sealed class MainViewModel : VmBase, IDisposable
     private void InitNetworkCheck()
     {
         NetworkCheckCommand = new RelayCommand(() => _ = RunNetworkCheckAsync());
-        DownloadSpeedCommand = new RelayCommand(() => _ = RunDownloadSpeedAsync());
-        UploadSpeedCommand = new RelayCommand(() => _ = RunUploadSpeedAsync());
     }
 
     public void KillSelectedProcess() => KillPid(_selected?.Pid ?? -1);
