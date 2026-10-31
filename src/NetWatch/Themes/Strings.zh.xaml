@@ -178,7 +178,7 @@
     <sys:String x:Key="ncv.nat">NAT 类型</sys:String>
     <sys:String x:Key="ncv.external">外部地址</sys:String>
     <sys:String x:Key="ncv.nat.direct">公网直连 · 无 NAT</sys:String>
-    <sys:String x:Key="ncv.nat.cone.note">符合 RFC 4787 Endpoint-Independent Mapping：外部地址/端口映射不随目标变化，联机穿透友好。A（Endpoint-Independent）与 B（Address-Dependent）取决于过滤行为，需 RFC 5780 探测方可严格区分。</sys:String>
+    <sys:String x:Key="ncv.nat.cone.note">符合 RFC 4787 Endpoint-Independent Mapping：外部地址/端口映射不随目标变化，联机穿透友好。严格区分 A / B 需 STUN 服务器支持 RFC 5780（CHANGE-REQUEST 换址测试）；本次探测未取得可用的支持服务器，故归入 A / B 区间。</sys:String>
     <sys:String x:Key="ncv.nat.symmetric.note">符合 RFC 4787 Address and Port-Dependent Mapping：每个目标分配独立外部端口，即传统对称型 NAT，P2P 穿透受限。</sys:String>
     <sys:String x:Key="ncv.nat.direct.note">本机地址即公网地址，未经过 NAT，不存在穿透问题。</sys:String>
     <sys:String x:Key="ncv.nat.cone">Endpoint-Independent Mapping（全锥形）· NAT A/B</sys:String>
@@ -211,7 +211,6 @@
     <sys:String x:Key="ncv.link">连接方式</sys:String>
     <sys:String x:Key="ncv.wifi">无线 (Wi-Fi)</sys:String>
     <sys:String x:Key="ncv.eth">有线 (Ethernet)</sys:String>
-    <sys:String x:Key="ncv.verdict">场景分析</sys:String>
     <sys:String x:Key="ncv.v.excellent">优秀</sys:String>
     <sys:String x:Key="ncv.v.good">良好</sys:String>
     <sys:String x:Key="ncv.v.fair">一般</sys:String>
@@ -221,7 +220,6 @@
     <sys:String x:Key="ncv.sc.meeting">实时语音 / 视频会议</sys:String>
     <sys:String x:Key="ncv.sc.streaming">高清流媒体 / 大文件传输</sys:String>
     <sys:String x:Key="ncv.sc.browsing">日常浏览</sys:String>
-    <sys:String x:Key="ncv.peak">会话峰值速率</sys:String>
     <sys:String x:Key="ncv.peak.text">↑ {0}　↓ {1}</sys:String>
     <sys:String x:Key="ncv.wifi.signal">Wi-Fi 信号强度</sys:String>
     <sys:String x:Key="ncv.wifi.ssid">网络名称 (SSID)</sys:String>
@@ -398,6 +396,21 @@
     <sys:String x:Key="sp.title">带宽测速</sys:String>
     <sys:String x:Key="sp.desc">下行从可用节点拉取真实数据采样，剔除 TCP 慢启动阶段后计算平均与峰值；节点自动选择，上次测通的节点优先。上行经公共端点测量，受其接收能力限制，仅供参考。测速全程直连，不经过代理。</sys:String>
     <sys:String x:Key="ncv.checking.speed">正在测量带宽…</sys:String>
+    <sys:String x:Key="ncv.excellent">网络状况优秀</sys:String>
+    <sys:String x:Key="ncv.good">网络状况良好</sys:String>
+    <sys:String x:Key="ncv.fair">网络状况一般</sys:String>
+    <sys:String x:Key="ncv.poor">网络状况较差</sys:String>
+    <sys:String x:Key="ncv.nat.fullcone">Endpoint-Independent Mapping / Filtering（全锥形）· NAT A</sys:String>
+    <sys:String x:Key="ncv.nat.restrictedcone">Endpoint-Independent Mapping · Address-Dependent Filtering（受限锥形）· NAT B</sys:String>
+    <sys:String x:Key="ncv.nat.portrestricted">Endpoint-Independent Mapping · Address- and Port-Dependent Filtering（端口受限锥形）· NAT C</sys:String>
+    <sys:String x:Key="ncv.nat.a.note">符合 RFC 4787 EIM + Endpoint-Independent Filtering：外部地址/端口映射不随目标变化，且任意外部主机均可主动回连，即全锥形，联机穿透最友好。</sys:String>
+    <sys:String x:Key="ncv.nat.b.note">符合 RFC 4787 EIM + Address-Dependent Filtering：映射不随目标变化，仅本机联系过的外部地址可回连，即受限锥形，联机基本无碍。</sys:String>
+    <sys:String x:Key="ncv.nat.c.note">符合 RFC 4787 EIM + Address- and Port-Dependent Filtering：映射不随目标变化，仅本机联系过的外部地址与端口可回连，即端口受限锥形。</sys:String>
+    <sys:String x:Key="ncv.analysis">综合分析</sys:String>
+    <sys:String x:Key="ncv.conclusion">体检结论</sys:String>
+    <sys:String x:Key="ping.gateway">网关（局域网）</sys:String>
+    <sys:String x:Key="ping.ali">阿里公共 DNS</sys:String>
+    <sys:String x:Key="ping.tencent">腾讯公共 DNS</sys:String>
     <sys:String x:Key="sp.picking">正在选择可用节点…</sys:String>
     <sys:String x:Key="sp.node">节点：{0} · 峰值 {1} Mbps</sys:String>
     <sys:String x:Key="sp.testing">正在通过 {0} 测速…</sys:String>

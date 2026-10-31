@@ -557,10 +557,10 @@ public sealed class MainViewModel : VmBase, IDisposable
         Evidence.Enqueue(rec);
     }
 
-    private static PingRowVM PingRowFrom(PingProbeResult r)
+    private static PingRowVM PingRowFrom(PingProbeResult r, string label)
     {
         var vm = new PingRowVM();
-        vm.Update(r);
+        vm.Update(r, label);
         return vm;
     }
 
@@ -842,14 +842,8 @@ public sealed class MainViewModel : VmBase, IDisposable
             var nat = await StunClient.DetectAsync(ct);
             NatText = nat.Classification;
             NatExternal = string.IsNullOrEmpty(nat.ExternalIp) ? "—" : nat.ExternalIp;
-            // 探测明细 + 该 NAT 类型的一句话解释（按 Kind 取，不拿显示文案猜）
-            NatDetailText = nat.Kind switch
-            {
-                "cone" => L10n.T("ncv.nat.cone.note"),
-                "symmetric" => L10n.T("ncv.nat.symmetric.note"),
-                "direct" => L10n.T("ncv.nat.direct.note"),
-                _ => "",
-            };
+            // 判定依据由 StunClient 按 RFC 分类下发（含 RFC 5780 受限时的原因说明）
+            NatDetailText = nat.Note;
             var probeLines = nat.Attempts.Select(a => $"• {a.Server} → {a.MappedIp}:{a.MappedPort}").ToList();
             if (probeLines.Count > 0) NatDetailText = (NatDetailText + "\n" + string.Join("\n", probeLines)).Trim();
             RaiseAll(nameof(NatText), nameof(NatExternal), nameof(NatDetailText));
@@ -866,16 +860,16 @@ public sealed class MainViewModel : VmBase, IDisposable
             WifiSsidText = wifi == null ? "—" : wifi.Ssid;
             RaiseAll(nameof(LinkTypeText), nameof(LinkSpeedText), nameof(WifiSignalText), nameof(WifiSsidText));
 
-            // 3) 延迟/抖动/丢包：网关（若有）+ 两个公网参考点
+            // 3) 延迟/抖动/丢包：网关（若有）+ 两个公网参考点（表格用友好名，IP 放提示）
             CheckProgressText = "";
             Raise(nameof(CheckProgressText));
-            var targets = new List<string>();
+            var targets = new List<(string Addr, string Label)>();
             var gw = Config.Snapshot.Adapters.Where(a => a.Status == "已连接")
                 .SelectMany(a => a.Gateways)
                 .FirstOrDefault(g => g.Contains('.') && !g.StartsWith("169.254"));
-            if (gw != null) targets.Add(gw);
-            targets.Add("223.5.5.5");
-            targets.Add("119.29.29.29");
+            if (gw != null) targets.Add((gw, L10n.T("ping.gateway")));
+            targets.Add(("223.5.5.5", L10n.T("ping.ali")));
+            targets.Add(("119.29.29.29", L10n.T("ping.tencent")));
 
             int natScore = nat.Kind == "symmetric" ? 2
                 : nat.Kind is "cone" or "direct" ? 0 : 1;
@@ -886,12 +880,12 @@ public sealed class MainViewModel : VmBase, IDisposable
             int latencyScore = 0, jitterScore = 0, lossScore = 0;
             double worstAvg = 0, worstJitter = 0, worstLoss = 0;
 
-            foreach (var target in targets)
+            foreach (var (addr, label) in targets)
             {
-                CheckProgressText = L10n.T("ncv.checking.ping", target);
+                CheckProgressText = L10n.T("ncv.checking.ping", addr);
                 Raise(nameof(CheckProgressText));
-                var r = await PingProbe.RunAsync(target, 30, ct);
-                PingRows.Add(PingRowFrom(r));
+                var r = await PingProbe.RunAsync(addr, 30, ct);
+                PingRows.Add(PingRowFrom(r, label));
                 if (r.Target != gw && r.Ok > 0) // 公网参考点计入评级（网关只做局域网参考）
                 {
                     worstAvg = Math.Max(worstAvg, r.AvgMs);

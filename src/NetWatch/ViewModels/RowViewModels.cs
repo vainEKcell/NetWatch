@@ -389,6 +389,7 @@ public sealed class ScenarioRowVM
 public sealed class PingRowVM : VmBase
 {
     public string Target { get; private set; } = "";
+    public string TargetIp { get; private set; } = "";
     public string MinText { get; private set; } = "";
     public string AvgText { get; private set; } = "";
     public string MaxText { get; private set; } = "";
@@ -398,9 +399,10 @@ public sealed class PingRowVM : VmBase
     public string QualityText { get; private set; } = "";
     public SolidColorBrush QualityBrush { get; private set; } = UiBrushes.Fg;
 
-    public void Update(PingProbeResult r)
+    public void Update(PingProbeResult r, string? label = null)
     {
-        Target = r.Target;
+        TargetIp = r.Target;
+        Target = label ?? r.Target;
         MinText = $"{r.MinMs:F1} ms";
         AvgText = $"{r.AvgMs:F1} ms";
         MaxText = $"{r.MaxMs:F1} ms";
@@ -410,7 +412,7 @@ public sealed class PingRowVM : VmBase
         var q = r.QualityScore switch { 0 => "ncv.q.excellent", 1 => "ncv.q.fair", _ => "ncv.q.poor" };
         QualityText = L10n.T(q);
         QualityBrush = r.QualityScore switch { 0 => UiBrushes.Green, 1 => UiBrushes.Amber, _ => UiBrushes.Red };
-        RaiseAll(nameof(Target), nameof(MinText), nameof(AvgText), nameof(MaxText),
+        RaiseAll(nameof(Target), nameof(TargetIp), nameof(MinText), nameof(AvgText), nameof(MaxText),
             nameof(JitterText), nameof(LossText), nameof(P95Text), nameof(QualityText), nameof(QualityBrush));
     }
 }

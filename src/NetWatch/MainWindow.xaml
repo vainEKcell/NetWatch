@@ -165,11 +165,11 @@
                 <ListBoxItem Content="{DynamicResource tab.overview}" IsSelected="True"/>
                 <ListBoxItem Content="{DynamicResource tab.destinations}"/>
                 <ListBoxItem Content="{DynamicResource tab.dns}"/>
-                <ListBoxItem Content="{DynamicResource tab.netcheck}"/>
                 <ListBoxItem Content="{DynamicResource tab.ports}"/>
                 <ListBoxItem Content="{DynamicResource tab.events}"/>
                 <ListBoxItem Content="{DynamicResource tab.blocklist}"/>
                 <ListBoxItem Content="{DynamicResource tab.network}"/>
+                <ListBoxItem Content="{DynamicResource tab.netcheck}"/>
                 <ListBoxItem Content="{DynamicResource tab.settings}"/>
             </ListBox>
             <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="Transparent"/>
@@ -511,8 +511,8 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- 运行行：按钮 + 进度 + 一句说明 -->
-                <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                <!-- 运行行：按钮 + 进度 + 检测内容说明（整体一个板块） -->
+                <StackPanel Grid.Row="0" Margin="0,18,0,12">
                     <StackPanel Orientation="Horizontal">
                         <Button Content="{DynamicResource ncv.run}" Command="{Binding NetworkCheckCommand}"
                                 IsEnabled="{Binding CheckRunning, Converter={StaticResource InvBool}}"/>
@@ -523,14 +523,13 @@
                                TextWrapping="Wrap" Margin="0,5,0,0"/>
                 </StackPanel>
 
-                <!-- 主体：左右两列，一屏放完不滚动 -->
+                <!-- 主体：左列 NAT / 带宽测速 / 延迟，右列 综合分析 / 体检结论 -->
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- 左列：NAT / 场景分析 / 连接信息 -->
                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
                         <Border Style="{StaticResource Card}" Margin="0,0,0,8">
                             <StackPanel>
@@ -546,57 +545,10 @@
                                                FontSize="11" Margin="6,0,0,0" TextTrimming="CharacterEllipsis"/>
                                 </Grid>
                                 <TextBlock Text="{Binding NatDetailText}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                           TextWrapping="Wrap" MaxHeight="90" TextTrimming="CharacterEllipsis" Margin="0,4,0,0"/>
+                                           TextWrapping="Wrap" MaxHeight="96" TextTrimming="CharacterEllipsis" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,8">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource ncv.verdict}" Style="{StaticResource SectionHeader}"/>
-                                <ItemsControl ItemsSource="{Binding ScenarioRows}" Margin="0,2,0,0">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" Margin="0,2">
-                                                <TextBlock Text="{Binding Name}" Width="110" VerticalAlignment="Center" FontSize="12"/>
-                                                <TextBlock Text="{Binding Verdict}" Foreground="{Binding Brush}"
-                                                           FontWeight="SemiBold" VerticalAlignment="Center" FontSize="12"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                <TextBlock Text="{Binding PeakText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,4,0,0"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource Card}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                <TextBlock Text="{DynamicResource ncv.link}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
-                                <TextBlock Grid.Column="1" Text="{Binding LinkTypeText}" FontSize="11" Margin="10,1,0,1"/>
-                                <TextBlock Grid.Row="1" Text="{DynamicResource ncv.linkspeed}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LinkSpeedText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="10,1,0,1"/>
-                                <TextBlock Grid.Row="2" Text="{DynamicResource ncv.wifi.signal}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding WifiSignalText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="10,1,0,1"/>
-                                <TextBlock Grid.Row="3" Text="{DynamicResource ncv.wifi.ssid}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding WifiSsidText}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                           Margin="10,1,0,1" TextTrimming="CharacterEllipsis" ToolTip="{Binding WifiSsidText}"/>
-                                <TextBlock Grid.Row="4" Text="{DynamicResource ncv.mtu}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding MtuText}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                           Margin="10,1,0,1" TextTrimming="CharacterEllipsis" ToolTip="{Binding MtuText}"/>
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-
-                    <!-- 右列：带宽测速 / 延迟 / 建议 -->
-                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
                         <Border Style="{StaticResource Card}" Margin="0,0,0,8">
                             <StackPanel>
                                 <TextBlock Text="{DynamicResource sp.title}" Style="{StaticResource SectionHeader}"/>
@@ -611,34 +563,109 @@
                             </StackPanel>
                         </Border>
 
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource ncv.ping}" Style="{StaticResource SectionHeader}"/>
+                                <!-- 列头 -->
+                                <Grid Margin="0,4,0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.3*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="52"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding [col.pingTarget], Source={x:Static services:Loc.Instance}}" FontSize="10.5" Foreground="{StaticResource DimBrush}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding [col.avg], Source={x:Static services:Loc.Instance}}" FontSize="10.5" Foreground="{StaticResource DimBrush}" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding [col.jitter], Source={x:Static services:Loc.Instance}}" FontSize="10.5" Foreground="{StaticResource DimBrush}" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Column="3" Text="{Binding [col.loss], Source={x:Static services:Loc.Instance}}" FontSize="10.5" Foreground="{StaticResource DimBrush}" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Column="4" Text="{Binding [col.p95], Source={x:Static services:Loc.Instance}}" FontSize="10.5" Foreground="{StaticResource DimBrush}" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Column="5" Text="{Binding [col.quality], Source={x:Static services:Loc.Instance}}" FontSize="10.5" Foreground="{StaticResource DimBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding PingRows}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{StaticResource RowAltBrush}" CornerRadius="3" Padding="6,4" Margin="0,1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="1.3*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="52"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Target}" FontSize="11.5" ToolTip="{Binding TargetIp}"
+                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AvgText}" FontSize="11.5" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding JitterText}" FontSize="11.5" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="3" Text="{Binding LossText}" FontSize="11.5" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="4" Text="{Binding P95Text}" FontSize="11.5" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="5" Text="{Binding QualityText}" FontSize="11.5" Foreground="{Binding QualityBrush}"
+                                                               FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
                         <Border Style="{StaticResource Card}" Margin="0,0,0,8">
-                            <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}"
-                                           Text="{DynamicResource ncv.ping}"/>
-                                <DataGrid ItemsSource="{Binding PingRows}" CanUserSortColumns="False" RowHeight="24" FontSize="11">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{Binding [col.pingTarget], Source={x:Static services:Loc.Instance}}" Binding="{Binding Target}" Width="1.4*"/>
-                                        <DataGridTextColumn Header="{Binding [col.avg], Source={x:Static services:Loc.Instance}}" Binding="{Binding AvgText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.jitter], Source={x:Static services:Loc.Instance}}" Binding="{Binding JitterText}" Width="*" ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.loss], Source={x:Static services:Loc.Instance}}" Binding="{Binding LossText}" Width="*"
-                                                            ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTextColumn Header="{Binding [col.p95], Source={x:Static services:Loc.Instance}}" Binding="{Binding P95Text}" Width="*"
-                                                            ElementStyle="{StaticResource CellRight}"/>
-                                        <DataGridTemplateColumn Header="{Binding [col.quality], Source={x:Static services:Loc.Instance}}" Width="60">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding QualityText}" Foreground="{Binding QualityBrush}" HorizontalAlignment="Right"/>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </DockPanel>
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource ncv.analysis}" Style="{StaticResource SectionHeader}"/>
+                                <ItemsControl ItemsSource="{Binding ScenarioRows}" Margin="0,4,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}" FontSize="12" VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Verdict}" Foreground="{Binding Brush}"
+                                                           FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="{Binding PeakText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                <Separator Margin="0,8"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="{DynamicResource ncv.link}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding LinkTypeText}" FontSize="11" Margin="10,1,0,1"/>
+                                    <TextBlock Grid.Row="1" Text="{DynamicResource ncv.linkspeed}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LinkSpeedText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="10,1,0,1"/>
+                                    <TextBlock Grid.Row="2" Text="{DynamicResource ncv.wifi.signal}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding WifiSignalText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="10,1,0,1"/>
+                                    <TextBlock Grid.Row="3" Text="{DynamicResource ncv.wifi.ssid}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding WifiSsidText}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                               Margin="10,1,0,1" TextTrimming="CharacterEllipsis" ToolTip="{Binding WifiSsidText}"/>
+                                    <TextBlock Grid.Row="4" Text="{DynamicResource ncv.mtu}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,1"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding MtuText}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                               Margin="10,1,0,1" TextTrimming="CharacterEllipsis" ToolTip="{Binding MtuText}"/>
+                                </Grid>
+                            </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="{DynamicResource ncv.advise}" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{DynamicResource ncv.conclusion}" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{Binding CheckVerdictText}" FontSize="15" FontWeight="Bold"
+                                           Foreground="{Binding CheckVerdictBrush}" Margin="0,2,0,4"/>
                                 <ItemsControl ItemsSource="{Binding CheckAdvices}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>

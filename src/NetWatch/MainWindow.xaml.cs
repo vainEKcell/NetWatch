@@ -22,13 +22,14 @@ public partial class MainWindow : Window
         _vm = new MainViewModel();
         DataContext = _vm;
         _vm.ChartPush += (u, d) => Chart.Push(u, d);
-        _vm.NavigateToEventsRequested += () => Nav.SelectedIndex = 5; // 事件流（网络体检页插入后顺延）
+        _vm.NavigateToEventsRequested += () => Nav.SelectedIndex = 4; // 事件流（网络体检移至网络配置之后）
         _vm.NavigateToOverviewRequested += () => Nav.SelectedIndex = 0;
         _vm.NavigateToDnsRequested += () => Nav.SelectedIndex = 2;
         _pages = new FrameworkElement[]
         {
-            PageOverview, PageDestinations, PageDns, PageNetCheck, PagePorts,
-            PageEvents, PageBlocking, PageNetwork, PageSettings,
+            // 与 Nav 项顺序一致：总览/目的地/DNS/端口/事件/拦截/网络配置/网络体检/设置
+            PageOverview, PageDestinations, PageDns, PagePorts,
+            PageEvents, PageBlocking, PageNetwork, PageNetCheck, PageSettings,
         };
         InitTray();
     }
