@@ -189,6 +189,9 @@
     <sys:String x:Key="ncv.nat.insufficient">Insufficient data (only one STUN server reachable)</sys:String>
     <sys:String x:Key="ncv.nat.fail">Cannot detect (no STUN response — if a proxy/TUN mode is on, UDP probes may be intercepted; try disabling it briefly)</sys:String>
     <sys:String x:Key="ncv.ping">Latency / jitter / loss</sys:String>
+    <sys:String x:Key="ncv.ping.note">The gateway is your router and reflects the LAN; the two public DNS entries are public reference points reflecting your ISP line. Look at the average: near 0 ms for the gateway and roughly 20–40 ms for public targets is normal. Rising jitter or packet loss directly affects voice and gaming.</sys:String>
+    <sys:String x:Key="sp.up.label">Upload (reference)</sys:String>
+    <sys:String x:Key="sp.down.label">Download</sys:String>
     <sys:String x:Key="col.pingTarget">Target</sys:String>
     <sys:String x:Key="col.min">Min</sys:String>
     <sys:String x:Key="col.avg">Avg</sys:String>
@@ -218,7 +221,7 @@
     <sys:String x:Key="ncv.v.fair">Fair</sys:String>
     <sys:String x:Key="ncv.v.poor">Poor</sys:String>
     <sys:String x:Key="ncv.v.unknown">Unknown</sys:String>
-    <sys:String x:Key="ncv.sc.gaming">Gaming (online)</sys:String>
+    <sys:String x:Key="ncv.sc.gaming">Gaming</sys:String>
     <sys:String x:Key="ncv.sc.meeting">Video conferencing</sys:String>
     <sys:String x:Key="ncv.sc.streaming">HD streaming</sys:String>
     <sys:String x:Key="ncv.sc.browsing">Everyday browsing</sys:String>
@@ -415,15 +418,15 @@
     <sys:String x:Key="ncv.analysis">Network analysis</sys:String>
     <sys:String x:Key="ncv.conclusion">Results</sys:String>
     <sys:String x:Key="ping.gateway">Gateway (LAN)</sys:String>
-    <sys:String x:Key="ping.ali">Aliyun Public DNS</sys:String>
-    <sys:String x:Key="ping.tencent">Tencent Public DNS</sys:String>
+    <sys:String x:Key="ping.ali">Public · Aliyun DNS</sys:String>
+    <sys:String x:Key="ping.tencent">Public · Tencent DNS</sys:String>
     <sys:String x:Key="sp.picking">Selecting an available node…</sys:String>
     <sys:String x:Key="sp.node">Node: {0} · peak {1} Mbps</sys:String>
     <sys:String x:Key="sp.testing">Testing via {0}…</sys:String>
     <sys:String x:Key="sp.done">Done</sys:String>
-    <sys:String x:Key="sp.best">Download {0} ({1} MB/s)</sys:String>
+    <sys:String x:Key="sp.best">{0} ({1} MB/s)</sys:String>
     <sys:String x:Key="sp.all.failed">No node was reachable; the test did not complete. Try again later.</sys:String>
     <sys:String x:Key="sp.upload.running">Measuring upload…</sys:String>
-    <sys:String x:Key="sp.upload.result">Upload {0:F1} Mbps ({1:F1} MB/s), reference value</sys:String>
+    <sys:String x:Key="sp.upload.result">{0:F1} Mbps ({1:F1} MB/s)</sys:String>
     <sys:String x:Key="sp.upload.failed">Upload did not complete (endpoint unresponsive); download results are unaffected</sys:String>
 </ResourceDictionary>

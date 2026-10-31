@@ -772,14 +772,14 @@ public sealed class MainViewModel : VmBase, IDisposable
 
     // ================= 带宽测速（并入体检一键流程） =================
 
-    public string SpeedBestText { get; private set; } = "";
-    public string SpeedNodeText { get; private set; } = "";
+    public string SpeedDownText { get; private set; } = "";
+    public string SpeedUpText { get; private set; } = "";
     public string SpeedTierText { get; private set; } = "";
-    public string UploadText { get; private set; } = "";
+    public string SpeedNodeText { get; private set; } = "";
     public string SpeedProgressText { get; private set; } = "";
 
-    private void RaiseSpeed() => RaiseAll(nameof(SpeedBestText), nameof(SpeedNodeText),
-        nameof(SpeedTierText), nameof(UploadText), nameof(SpeedProgressText));
+    private void RaiseSpeed() => RaiseAll(nameof(SpeedDownText), nameof(SpeedUpText),
+        nameof(SpeedTierText), nameof(SpeedNodeText), nameof(SpeedProgressText));
 
     /// 由实测吞吐估算宽带档位：运营商通常提供 5%~35% 冗余，取实测值能落入的最小常见档位
     private static string EstimateTier(double measuredMbps, out double headroomPct)
@@ -802,7 +802,7 @@ public sealed class MainViewModel : VmBase, IDisposable
     /// 由体检流程调用；节点可用性随时段变化，上次测通的节点优先。
     private async Task<(double DownMbps, double UpMbps)?> RunSpeedTestCoreAsync()
     {
-        SpeedBestText = ""; SpeedNodeText = ""; SpeedTierText = ""; UploadText = "";
+        SpeedDownText = ""; SpeedUpText = ""; SpeedTierText = ""; SpeedNodeText = "";
         SpeedProgressText = L10n.T("sp.picking");
         RaiseSpeed();
 
@@ -823,16 +823,16 @@ public sealed class MainViewModel : VmBase, IDisposable
 
         if (down != null)
         {
-            SpeedBestText = L10n.T("sp.best", $"{down.MbpsAvg:F1} Mbps", $"{down.MBPerSec:F1}");
-            SpeedNodeText = L10n.T("sp.node", down.Source, $"{down.MbpsPeak:F1}");
+            SpeedDownText = L10n.T("sp.best", $"{down.MbpsAvg:F1} Mbps", $"{down.MBPerSec:F1}");
             var measured = Math.Max(down.MbpsAvg, down.MbpsPeak * 0.9);
             SpeedTierText = L10n.T("sp.tier", EstimateTier(measured, out var headroom), headroom);
+            SpeedNodeText = L10n.T("sp.node", down.Source, $"{down.MbpsPeak:F1}");
         }
         else
         {
-            SpeedBestText = L10n.T("sp.all.failed");
-            SpeedNodeText = "";
+            SpeedDownText = L10n.T("sp.all.failed");
             SpeedTierText = "";
+            SpeedNodeText = "";
         }
 
         // 上行：公共端点参考值
@@ -848,7 +848,7 @@ public sealed class MainViewModel : VmBase, IDisposable
             }
             catch (Exception ex) { Log.Error($"上行测速 {name} 未完成", ex); }
         }
-        UploadText = up > 0 ? L10n.T("sp.upload.result", up, up / 8.0) : L10n.T("sp.upload.failed");
+        SpeedUpText = up > 0 ? L10n.T("sp.upload.result", up, up / 8.0) : L10n.T("sp.upload.failed");
 
         SpeedProgressText = L10n.T("sp.done");
         RaiseSpeed();
@@ -883,7 +883,7 @@ public sealed class MainViewModel : VmBase, IDisposable
         CheckRunning = true;
         NatText = "…"; NatExternal = ""; NatDetailText = ""; LinkTypeText = "";
         WifiSignalText = ""; WifiSsidText = "";
-        SpeedBestText = ""; SpeedNodeText = ""; SpeedTierText = ""; UploadText = ""; SpeedProgressText = "";
+        SpeedDownText = ""; SpeedUpText = ""; SpeedNodeText = ""; SpeedTierText = ""; SpeedProgressText = "";
         CheckVerdictText = L10n.T("ncv.running"); CheckVerdictBrush = UiBrushes.Dim;
         CheckAdvices.Clear(); PingRows.Clear(); ScenarioRows.Clear();
         RaiseAll(nameof(CheckRunning), nameof(CheckProgressText), nameof(NatText), nameof(NatExternal),

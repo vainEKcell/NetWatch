@@ -562,11 +562,23 @@
                             <StackPanel>
                                 <TextBlock Text="{DynamicResource sp.title}" Style="{StaticResource SectionHeader}"/>
                                 <TextBlock Text="{Binding SpeedProgressText}" Foreground="{StaticResource DimBrush}" FontSize="11" Margin="0,2,0,0"/>
-                                <TextBlock Text="{Binding SpeedBestText}" FontSize="15" FontWeight="Bold" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding SpeedTierText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                <!-- 上下行并排：左下行（主） / 右上行（参考） -->
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{DynamicResource sp.down.label}" Foreground="{StaticResource DimBrush}" FontSize="11"/>
+                                        <TextBlock Text="{Binding SpeedDownText}" FontSize="15" FontWeight="Bold" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                        <TextBlock Text="{DynamicResource sp.up.label}" Foreground="{StaticResource DimBrush}" FontSize="11"/>
+                                        <TextBlock Text="{Binding SpeedUpText}" FontSize="15" FontWeight="Bold" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="{Binding SpeedTierText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,5,0,0"/>
                                 <TextBlock Text="{Binding SpeedNodeText}" Foreground="{StaticResource DimBrush}" FontSize="11"
-                                           TextWrapping="Wrap" Margin="0,3,0,0"/>
-                                <TextBlock Text="{Binding UploadText}" Foreground="{StaticResource DimBrush}" FontSize="11"
                                            TextWrapping="Wrap" Margin="0,3,0,0"/>
                                 <TextBlock Text="{DynamicResource sp.desc}" Foreground="{StaticResource DimBrush}" FontSize="11"
                                            TextWrapping="Wrap" Margin="0,6,0,0"/>
@@ -576,6 +588,8 @@
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <TextBlock Text="{DynamicResource ncv.ping}" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="{DynamicResource ncv.ping.note}" Foreground="{StaticResource DimBrush}" FontSize="11"
+                                           TextWrapping="Wrap" Margin="0,0,0,4"/>
                                 <!-- 列头 -->
                                 <Grid Margin="0,4,0,2">
                                     <Grid.ColumnDefinitions>
